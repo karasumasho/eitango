@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英単語 4択テストアプリ (LEAP)</title>
+    <title>mikan-seijin (LEAP)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -28,6 +28,7 @@
             flex-direction: column;
             height: 85vh;
             position: relative;
+            overflow: hidden;
         }
         .screen {
             display: none;
@@ -135,6 +136,17 @@
             text-align: center;
             flex-shrink: 0;
         }
+        .quiz-type-badge {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #c2410c;
+            background: #ffedd5;
+            padding: 2px 8px;
+            border-radius: 10px;
+            align-self: center;
+            margin-bottom: 4px;
+        }
         .feedback-banner {
             font-size: 1.1rem;
             font-weight: bold;
@@ -152,7 +164,7 @@
         .question-box {
             background: #ffedd5;
             color: #c2410c;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             text-align: center;
             padding: 16px;
@@ -163,6 +175,7 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
+            line-height: 1.4;
         }
         .speaker-btn {
             background: #ffffff;
@@ -199,12 +212,35 @@
             border-color: #ef4444 !important;
             color: #991b1b !important;
         }
+
+        .typing-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        .typing-input {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            border: 2px solid #fed7aa;
+            box-sizing: border-box;
+            text-align: center;
+            outline: none;
+        }
+        .typing-input:focus {
+            border-color: #f97316;
+        }
+
         .result-box {
             text-align: center;
             font-size: 1.2rem;
             margin: 10px 0;
             color: #1f2937;
         }
+        
+        /* 独立オーバーレイ画面共通スタイル */
         .overlay-screen {
             position: absolute;
             top: 0;
@@ -212,7 +248,7 @@
             width: 100%;
             height: 100%;
             background: #fff7ed;
-            z-index: 10;
+            z-index: 50;
             padding: 20px;
             box-sizing: border-box;
             display: none;
@@ -233,44 +269,30 @@
             font-size: 1.05rem;
         }
         
-        .accordion-header {
-            background: #ffffff;
-            border: 1px solid #fed7aa;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            color: #1e293b;
-            flex-shrink: 0;
-        }
-        .accordion-content {
-            display: none;
-            padding: 6px 0 12px 0;
-            flex-direction: column;
-            gap: 6px;
-        }
         .word-history-card {
             background: #ffffff;
             border: 1px solid #fed7aa;
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 10px 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: background 0.2s;
+            margin-bottom: 8px;
         }
         .word-history-card:hover {
             background: #fffbeb;
         }
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .history-marks {
             letter-spacing: 2px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         
         .total-stats-card {
@@ -327,23 +349,22 @@
 <div class="container">
     <div id="app-header" style="text-align: center; margin-bottom: 10px; flex-shrink: 0;">
         <div id="main-title" style="font-size: 1.8rem; font-weight: bold; color: #7c2d12; line-height: 1.2;">mikan-seijin</div>
-        <div id="sub-title" style="font-size: 1rem; color: #9a3412; font-weight: normal; margin-top: 2px;">英単語4択テストアプリ</div>
+        <div id="sub-title" style="font-size: 1rem; color: #9a3412; font-weight: normal; margin-top: 2px;">英単語アプリ (LEAP)</div>
     </div>
 
     <!-- ① モード選択画面 -->
     <div id="mode-screen" class="screen active">
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
-            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごとに選択)</button>
-            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem; background-color: #059669;" onclick="selectMode('test')">🎯 テストモード (50問中20問ランダム)</button>
+            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
+            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem; background-color: #059669;" onclick="selectMode('test')">🎯 総合テスト (20問ミックス)</button>
             <button class="btn history-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showHistoryScreen()">📊 単語別アチーブメント・履歴</button>
             
             <div class="total-stats-card">
-                <div class="total-stats-title">📊 全体トータル達成率</div>
+                <div class="total-stats-title">📊 全体トータル達成率 (総合)</div>
                 <div class="total-stats-value" id="total-achievement-text">0%</div>
             </div>
 
-            <!-- 全体達成率が5%増えるごとに大きくなり、最大で3倍（195px）になるみかん星人 -->
             <div class="mikan-container">
                 <div class="mikan-speech-text" id="mikan-speech">＼マダ ネナイノ？／</div>
                 <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
@@ -358,12 +379,15 @@
         <button class="btn back-btn" id="chapter-back-btn" onclick="showModeSelect()">モード選択に戻る</button>
     </div>
 
-    <!-- ②-2 学習モード専用：チャプターメニュー（テスト前の確認画面） -->
+    <!-- ②-2 学習モード専用：回答形式の選択メニュー -->
     <div id="learn-menu-screen" class="screen">
         <h2 id="learn-menu-title" style="color: #7c2d12; text-align: center; margin-bottom: 10px; font-size: 1.2rem;"></h2>
-        <div style="display: flex; flex-direction: column; gap: 10px; justify-content: center; flex-grow: 1;">
-            <button class="btn primary-btn" style="padding: 16px; font-size: 1.1rem;" onclick="startActualLearnQuiz()">🚀 テストをする (ランダム)</button>
-            <button class="btn secondary-btn" style="padding: 16px; font-size: 1.1rem; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする (意味を見る)</button>
+        <p style="text-align: center; color: #9a3412; font-size: 0.85rem; margin-top: -5px; margin-bottom: 10px;">出題・回答形式を選択してください</p>
+        <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-grow: 1;">
+            <button class="btn primary-btn" style="padding: 14px;" onclick="startLearnQuizWithType('ja_choice')">📖 和訳 4択テスト (英 ➔ 日)</button>
+            <button class="btn primary-btn" style="padding: 14px; background-color: #0284c7;" onclick="startLearnQuizWithType('en_choice')">🔤 英訳 4択テスト (日 ➔ 英)</button>
+            <button class="btn primary-btn" style="padding: 14px; background-color: #7c3aed;" onclick="startLearnQuizWithType('en_typing')">⌨️ 英訳 タイピング (日 ➔ 英)</button>
+            <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする (意味を見る)</button>
         </div>
         <button class="btn back-btn" onclick="backToSubChapters()">チャプター選択に戻る</button>
     </div>
@@ -371,13 +395,22 @@
     <!-- ③ クイズ画面 -->
     <div id="quiz-screen" class="screen">
         <div class="progress" id="progress"></div>
+        <div class="quiz-type-badge" id="quiz-type-badge"></div>
         <div class="feedback-banner" id="feedback-banner"></div>
+        
         <div class="question-box">
-            <span id="question-word"></span>
-            <button class="speaker-btn" onclick="speakCurrentWord()" title="発音を聞く">🔊</button>
+            <span id="question-text"></span>
+            <button class="speaker-btn" id="speaker-btn" onclick="speakCurrentWord()" title="発音を聞く">🔊</button>
         </div>
+        
         <div class="choices-container" id="choices-container"></div>
-        <button class="btn danger-btn" onclick="confirmQuitQuiz()">🚪 途中でやめる（中断）</button>
+
+        <div class="typing-container" id="typing-container" style="display: none;">
+            <input type="text" id="typing-input" class="typing-input" placeholder="英単語を入力..." autocomplete="off" capitalize="off" spellcheck="false">
+            <button class="btn primary-btn" onclick="submitTypingAnswer()">回答する</button>
+        </div>
+
+        <button class="btn danger-btn" style="margin-top: auto;" onclick="confirmQuitQuiz()">🚪 途中でやめる（中断）</button>
     </div>
 
     <!-- ④ 結果画面 -->
@@ -398,29 +431,29 @@
             
             <div id="mistake-inline-container" style="margin-top: 10px;"></div>
 
-            <button class="btn" style="margin-top: 10px;" onclick="handleResultBackToChapter()">チャプター選択に戻る</button>
+            <button class="btn" style="margin-top: 10px;" onclick="handleResultBackToChapter()" id="result-back-action-btn">出題・回答形式選択に戻る</button>
             <button class="btn back-btn" onclick="showModeSelect()">最初に戻る</button>
         </div>
     </div>
 
-    <!-- ⑤ 単語詳細確認画面（テスト結果用） -->
+    <!-- ⑤ 単語詳細確認画面 (独立オーバーレイ) -->
     <div id="detail-screen" class="overlay-screen">
         <h2 style="color: #7c2d12;">今回のテスト単語・結果一覧</h2>
         <div class="scroll-container" id="detail-list" style="margin-bottom: 10px;"></div>
         <button class="btn primary-btn" onclick="hideDetailScreen()">戻る</button>
     </div>
 
-    <!-- ⑤-2 学習前チャプター単語チェック画面 -->
+    <!-- ⑤-2 学習前チャプター単語チェック画面 (独立オーバーレイ) -->
     <div id="vocab-check-screen" class="overlay-screen">
         <h2 style="color: #7c2d12;" id="vocab-check-title">チャプター単語一覧・意味</h2>
         <div class="scroll-container" id="vocab-check-list" style="margin-bottom: 10px;"></div>
         <button class="btn primary-btn" onclick="hideVocabCheckScreen()">戻る</button>
     </div>
 
-    <!-- ⑥ 成績履歴画面 -->
+    <!-- ⑥ 成績履歴画面 (独立オーバーレイ) -->
     <div id="history-screen" class="overlay-screen">
-        <h2 style="color: #7c2d12;">単語別達成率・学習履歴</h2>
-        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 タップすると詳しい意味を見られます</p>
+        <h2 style="color: #7c2d12;">単語別アチーブメント・履歴</h2>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 範囲をタップすると単語一覧がひらきます</p>
         
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
@@ -435,8 +468,16 @@
         <button class="btn primary-btn" onclick="hideHistoryScreen()" style="margin-top: 0;">戻る</button>
     </div>
 
-    <!-- ⑦ 単語詳細ポップアップモーダル（履歴画面用） -->
-    <div id="word-detail-modal" class="overlay-screen" style="justify-content: center; align-items: center; background: rgba(0,0,0,0.5);">
+    <!-- ⑥-2 履歴の範囲内単語一覧表示画面 (独立オーバーレイ) -->
+    <div id="history-group-screen" class="overlay-screen">
+        <h2 style="color: #7c2d12;" id="history-group-title">単語一覧・履歴</h2>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 単語をタップすると詳しい意味を見られます</p>
+        <div class="scroll-container" id="history-group-list" style="margin-bottom: 10px;"></div>
+        <button class="btn primary-btn" onclick="hideHistoryGroupScreen()">戻る</button>
+    </div>
+
+    <!-- ⑦ 単語詳細ポップアップモーダル -->
+    <div id="word-detail-modal" class="overlay-screen" style="justify-content: center; align-items: center; background: rgba(0,0,0,0.5); z-index: 60;">
         <div style="background: #fff7ed; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px; border: 2px solid #fed7aa; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
             <h3 id="modal-word-title" style="color: #c2410c; margin-top: 0; font-size: 1.3rem;"></h3>
             <div id="modal-word-detail" style="font-size: 1rem; color: #334155; margin: 15px 0; line-height: 1.5;"></div>
@@ -446,74 +487,38 @@
 </div>
 
 <script>
-    // みかん星人のシュールなセリフ（50個）
     const mikanSpeeches = [
-
-        "＼マダ ネナイノ？／",
-        "＼アタラナケレバ ドウトイウコトハ ナイ／",
-        "＼ボウヤ ダカラサ！／",
-        "＼ドッチナンダイ！／",
-        "＼グーグルデ イインジャナイ？／",
-        "＼ザクトハ チガウノダヨ。ザクトハ！／",
-        "＼ダガ コトワル！／",
-        "＼キンキンニ　ヒエテヤガルッ・・・！／",
-        "＼ウチ ハ ウチ ヨソ ハ ヨソ／",
-        "＼ソシテ　カガヤク　ウルトラ　ソウル／",
-        "＼オナカ スイタワー／",
-        "＼４０ビョウデ　シタクシナ！／",
-        "＼ココロヲ　モヤセ！／",
-        "＼ミカン デス ケド ナニカ？／",
-        "＼ワレワレハ　ミカンセイジン　ダ／",
-        "＼ムネヲ　ハッテ　イキロ／",
-        "＼ウマイ！　ウマイ！　ウマイ！／",
-        "＼ワカイメハ　ツマセナイ／",
-        "＼ツメキリ ハ シナイ／",
-        "＼オレハ　シンジル　キミタチヲ　シンジル／",
-        "＼ヨモヤ　ヨモヤ　ダ／",
-        "＼シランケド／",
-        "＼ソレガ キミノ　ホンキ？／",
-        "＼オレハ　オレノセキムヲ　マットウスル／",
-        "＼チョコット ヤスミタイ／",
-        "＼ハヲ　クイシバッテ　マエヲムケ／",
-        "＼オマエノモノハ　オレノモノ／",
-        "＼ダカラ　イッタダロ／",
-        "＼スイブン ホキュウチュウ／",
-        "＼ヤバイヨ　ヤバイヨ／",
-        "＼ジャースティース！／",
-        "＼ワイルド　ダロ？／",
-        "＼マジッスカ？／",
-        "＼パワー！／",
-        "＼ハ　カ　タ　ノ　シオッ！／",
-        "＼ネテモ　ツカレガ　トレマセン／",
-        "＼アシタノ　パン　カワナ／",
-        "＼ダッテ　ニンゲン　ダモノ／",
-        "＼モウ　ツキアッチャエヨ！！！／",
-        "＼サイゴマデ　タッテイタ　ヤツガ　カツンダ／",
-        "＼ワタシハ　イマノ　ハナシヲ　シテイルンダヨ／",
-        "＼ゲンキ デスカ？／",
-        "＼ライバル　ハ　ジブン／",
-        "＼バルス！！／",
-        "＼イツカ　キミニ　ミセテアゲタイ／",
-        "＼ニゲチャ　ダメダ／",
-        "＼エライヒトニハ　ワカランノデスヨ／",
-        "＼ソコニ　シビレル！　アコガレルゥ！／",
-        "＼ミカン パワー ゼンカイ／",
-        "＼３フンダケ　マッテヤル／"
+        "＼マダ ネナイノ？／", "＼アタラナケレバ ドウトイウコトハ ナイ／", "＼ボウヤ ダカラサ！／",
+        "＼ドッチナンダイ！／", "＼グーグルデ イインジャナイ？／", "＼ザクトハ チガウノダヨ。ザクトハ！／",
+        "＼ダガ コトワル！／", "＼キンキンニ ヒエテヤガルッ・・・！／", "＼ウチ ハ ウチ ヨソ ハ ヨソ／",
+        "＼ソシテ カガヤク ウルトラ ソウル／", "＼オナカ スイタワー／", "＼４０ビョウデ シタクシナ！／",
+        "＼ココロヲ モヤセ！／", "＼ミカン デス ケド ナニカ？／", "＼ワレワレハ ミカンセイジン ダ／",
+        "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
+        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
+        "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
+        "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
+        "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
+        "＼アシタノ パン カワナ／", "＼ダッテ ニンゲン ダモノ／", "＼モウ ツキアッチャエヨ！！！／",
+        "＼サイゴマデ タッテイタ ヤツガ カツンダ／", "＼ワタシハ イマノ ハナシヲ シテイルンダヨ／",
+        "＼ゲンキ デスカ？／", "＼ライバル ハ ジブン／", "＼バルス！！／",
+        "＼イツカ キミニ ミセテアゲタイ／", "＼ニゲチャ ダメダ／",
+        "＼エライヒトニハ ワカランノデスヨ／", "＼ソコニ シビレル！ アコガレルゥ！／",
+        "＼ミカン パワー ゼンカイ／", "＼３フンダケ マッテヤル／"
     ];
 
     function changeMikanSpeech() {
         const textElement = document.getElementById('mikan-speech');
         if (textElement && mikanSpeeches.length > 0) {
-            const randomIndex = Math.floor(Math.random() * mikanSpeeches.length);
-            textElement.innerText = mikanSpeeches[randomIndex];
+            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
         }
     }
 
     function changeResultMikanSpeech() {
         const textElement = document.getElementById('result-mikan-speech');
         if (textElement && mikanSpeeches.length > 0) {
-            const randomIndex = Math.floor(Math.random() * mikanSpeeches.length);
-            textElement.innerText = mikanSpeeches[randomIndex];
+            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
         }
     }
 
@@ -2832,28 +2837,43 @@
     let score = 0;
     let mistakeList = [];
     let sessionWords = [];
+    let currentSelectedQuizType = "ja_choice";
 
-    // --- ローカルストレージ（単語ごとの履歴管理） ---
+    const maxHistoryCounts = {
+        ja_choice: 4,
+        en_choice: 4,
+        en_typing: 3
+    };
+
     function getWordHistoryMap() {
-        return JSON.parse(localStorage.getItem('vocab_word_history_map')) || {};
+        return JSON.parse(localStorage.getItem('vocab_word_history_map_v2')) || {};
     }
 
-    function recordWordResult(englishWord, isCorrect) {
+    function recordWordResult(englishWord, type, isCorrect) {
         let map = getWordHistoryMap();
-        if (!map[englishWord]) map[englishWord] = [];
+        if (!map[englishWord]) {
+            map[englishWord] = { ja_choice: [], en_choice: [], en_typing: [] };
+        }
+        if (Array.isArray(map[englishWord])) {
+            const oldArr = map[englishWord];
+            map[englishWord] = { ja_choice: oldArr, en_choice: [], en_typing: [] };
+        }
+        if (!map[englishWord][type]) map[englishWord][type] = [];
+
+        map[englishWord][type].push(isCorrect);
         
-        map[englishWord].push(isCorrect);
-        if (map[englishWord].length > 5) {
-            map[englishWord].shift();
+        const limit = maxHistoryCounts[type] || 4;
+        if (map[englishWord][type].length > limit) {
+            map[englishWord][type].shift();
         }
         
-        localStorage.setItem('vocab_word_history_map', JSON.stringify(map));
+        localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(map));
     }
 
-    function calcWordStats(historyArray) {
+    function calcWordStats(historyArray, limit) {
         if (!historyArray || historyArray.length === 0) return { rate: 0, count: 0 };
         const correctCount = historyArray.filter(r => r === true).length;
-        const rate = Math.round((correctCount / 5) * 100);
+        const rate = Math.round((correctCount / limit) * 100);
         return { rate: rate, count: historyArray.length, correctCount: correctCount };
     }
 
@@ -2863,11 +2883,23 @@
         let learnedCount = 0;
 
         wordsInChapter.forEach(w => {
-            const h = map[w.english];
-            if (h && h.length > 0) {
-                const stats = calcWordStats(h);
-                totalRate += stats.rate;
-                learnedCount++;
+            const hObj = map[w.english];
+            if (hObj) {
+                const types = ['ja_choice', 'en_choice', 'en_typing'];
+                let wordSum = 0;
+                let wordCount = 0;
+                types.forEach(t => {
+                    const arr = Array.isArray(hObj) ? (t === 'ja_choice' ? hObj : []) : (hObj[t] || []);
+                    if (arr.length > 0) {
+                        const limit = maxHistoryCounts[t];
+                        wordSum += calcWordStats(arr, limit).rate;
+                        wordCount++;
+                    }
+                });
+                if (wordCount > 0) {
+                    totalRate += Math.round(wordSum / wordCount);
+                    learnedCount++;
+                }
             }
         });
 
@@ -2876,27 +2908,35 @@
         return { rate: avgRate, learnedRatio: `${avgRate}%` };
     }
 
-    // 全体トータル達成率を計算し、達成率が5%刻みでみかん星人のサイズを大きく（最大3倍=195px）
     function updateOverallStats() {
         const map = getWordHistoryMap();
         let totalRate = 0;
 
         wordsData.forEach(w => {
-            const h = map[w.english];
-            if (h && h.length > 0) {
-                const stats = calcWordStats(h);
-                totalRate += stats.rate;
+            const hObj = map[w.english];
+            if (hObj) {
+                const types = ['ja_choice', 'en_choice', 'en_typing'];
+                let wordSum = 0;
+                let wordCount = 0;
+                types.forEach(t => {
+                    const arr = Array.isArray(hObj) ? (t === 'ja_choice' ? hObj : []) : (hObj[t] || []);
+                    if (arr.length > 0) {
+                        const limit = maxHistoryCounts[t];
+                        wordSum += calcWordStats(arr, limit).rate;
+                        wordCount++;
+                    }
+                });
+                if (wordCount > 0) {
+                    totalRate += Math.round(wordSum / wordCount);
+                }
             }
         });
 
         const overallRate = wordsData.length > 0 ? Math.round(totalRate / wordsData.length) : 0;
         document.getElementById('total-achievement-text').innerText = `${overallRate}%`;
 
-        // 初期サイズ 65px、最大 195px（3倍）
         const minSize = 65;
         const maxSize = 195;
-        
-        // 5% 単位（0, 5, 10, 15...）で切り捨ててステップ計算
         const stepRate = Math.floor(overallRate / 5) * 5;
         const dynamicSize = Math.round(minSize + (maxSize - minSize) * (stepRate / 100));
         
@@ -2907,13 +2947,11 @@
         }
     }
 
-    // --- データ管理トグル機能 ---
     function toggleDataManagementPanel() {
         const panel = document.getElementById('data-management-panel');
         panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    // --- バックアップ・復元機能 ---
     function exportHistoryData() {
         const map = getWordHistoryMap();
         if (Object.keys(map).length === 0) {
@@ -2945,25 +2983,7 @@
                 if (typeof importedMap !== 'object' || importedMap === null) {
                     throw new Error("無効なファイル形式です。");
                 }
-
-                const currentMap = getWordHistoryMap();
-                const isOverwrite = confirm("【復元方法の選択】\n「OK」を押すと既存データを上書きします。\n「キャンセル」を押すと現在の履歴と統合（マージ）します。");
-
-                let finalMap = {};
-                if (isOverwrite) {
-                    finalMap = importedMap;
-                } else {
-                    finalMap = { ...currentMap };
-                    Object.keys(importedMap).forEach(word => {
-                        if (!finalMap[word]) {
-                            finalMap[word] = importedMap[word];
-                        } else {
-                            finalMap[word] = [...finalMap[word], ...importedMap[word]].slice(-5);
-                        }
-                    });
-                }
-
-                localStorage.setItem('vocab_word_history_map', JSON.stringify(finalMap));
+                localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(importedMap));
                 alert("学習履歴データの復元が完了しました！");
                 showHistoryScreen();
             } catch (err) {
@@ -2974,34 +2994,43 @@
         reader.readAsText(file);
     }
 
-    // --- 音声・効果音 ---
+    let audioCtx = null;
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
     function speakWord(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             utterance.rate = 0.9;
-            
             const voices = window.speechSynthesis.getVoices();
             if (voices.length > 0) {
                 const enVoice = voices.find(v => v.lang.startsWith('en'));
                 if (enVoice) utterance.voice = enVoice;
             }
-
             window.speechSynthesis.speak(utterance);
         }
     }
 
     function speakCurrentWord() {
         if (currentQuestions[currentIndex]) {
-            speakWord(currentQuestions[currentIndex].english);
+            speakWord(currentQuestions[currentIndex].word.english);
         }
     }
 
     function playCorrectSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') { ctx.resume(); }
+            const ctx = getAudioContext();
             const now = ctx.currentTime;
             const osc1 = ctx.createOscillator();
             const gain1 = ctx.createGain();
@@ -3027,8 +3056,7 @@
 
     function playIncorrectSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') { ctx.resume(); }
+            const ctx = getAudioContext();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sawtooth';
@@ -3044,8 +3072,7 @@
 
     function playShortFanfare() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') { ctx.resume(); }
+            const ctx = getAudioContext();
             const now = ctx.currentTime;
             const notes = [
                 { f: 523.25, t: 0.0, d: 0.12 },
@@ -3059,7 +3086,7 @@
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 osc.frequency.setValueAtTime(n.f, now + n.t);
-                gain.gain.setValueAtTime(0.15, now + n.t);
+                gain.gain.setValueAtTime(0.2, now + n.t);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + n.t + n.d);
                 osc.start(now + n.t);
                 osc.stop(now + n.t + n.d);
@@ -3069,8 +3096,7 @@
 
     function playVictoryFanfare() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') { ctx.resume(); }
+            const ctx = getAudioContext();
             const now = ctx.currentTime;
             const notes = [
                 { f: 523.25, t: 0.00, d: 0.15 },
@@ -3087,7 +3113,7 @@
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 osc.frequency.setValueAtTime(n.f, now + n.t);
-                gain.gain.setValueAtTime(0.2, now + n.t);
+                gain.gain.setValueAtTime(0.25, now + n.t);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + n.t + n.d);
                 osc.start(now + n.t);
                 osc.stop(now + n.t + n.d);
@@ -3102,7 +3128,7 @@
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 osc.frequency.setValueAtTime(f, chordTime);
-                gain.gain.setValueAtTime(0.15, chordTime);
+                gain.gain.setValueAtTime(0.2, chordTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, chordTime + 0.9);
                 osc.start(chordTime);
                 osc.stop(chordTime + 0.9);
@@ -3110,7 +3136,6 @@
         } catch(e) {}
     }
 
-    // --- 画面遷移 ---
     function switchScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
@@ -3123,11 +3148,11 @@
             mainTitle.style.fontSize = "1.8rem";
             mainTitle.style.fontWeight = "bold";
             mainTitle.style.color = "#7c2d12";
-            subTitle.innerText = "英単語4択テストアプリ";
+            subTitle.innerText = "英単語アプリ (LEAP)";
             subTitle.style.display = "block";
             changeMikanSpeech();
         } else {
-            mainTitle.innerText = "英単語 4択テストアプリ";
+            mainTitle.innerText = "mikan-seijin";
             mainTitle.style.fontSize = "1.2rem";
             mainTitle.style.fontWeight = "bold";
             mainTitle.style.color = "#7c2d12";
@@ -3141,6 +3166,7 @@
     }
 
     function selectMode(mode) {
+        getAudioContext();
         currentMode = mode;
         const listContainer = document.getElementById('chapter-list');
         listContainer.innerHTML = '';
@@ -3168,7 +3194,7 @@
                 listContainer.appendChild(btn);
             });
         } else {
-            instruction.innerText = "テストする範囲 (50問中20問ランダム) を選んでください";
+            instruction.innerText = "テストする範囲 (20問ミックス) を選んでください";
             const testRanges = [...new Set(wordsData.map(w => w.test))];
             testRanges.forEach(range => {
                 const btn = document.createElement('button');
@@ -3188,7 +3214,7 @@
 
     function showSubChapters(range) {
         const instruction = document.getElementById('chapter-instruction');
-        instruction.innerText = `範囲 ${range} 内のチャプター (10語ずつ) を選んでください`;
+        instruction.innerText = `範囲 ${range} 内のチャプターを選んでください`;
         const listContainer = document.getElementById('chapter-list');
         listContainer.innerHTML = '';
 
@@ -3224,7 +3250,7 @@
 
     function handleResultBackToChapter() {
         if (currentMode === 'learn') {
-            showSubChapters(selectedBlock50);
+            showLearnMenu(currentChapterOrRange);
         } else {
             selectMode('test');
         }
@@ -3235,15 +3261,298 @@
         switchScreen('learn-menu-screen');
     }
 
-    function startActualLearnQuiz() {
+    function startLearnQuizWithType(type) {
+        getAudioContext();
+        currentSelectedQuizType = type;
         const filtered = wordsData.filter(w => w.chapter === currentChapterOrRange);
         const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+        
         sessionWords = [...shuffled];
-        currentQuestions = [...shuffled];
+        currentQuestions = shuffled.map(w => ({ word: w, quizType: type }));
         setupQuiz();
     }
 
+    function startTestQuiz(testRange) {
+        getAudioContext();
+        const filtered = wordsData.filter(w => w.test === testRange);
+        const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, 20);
+        
+        sessionWords = [...selected];
+        
+        const jaChoiceWords = selected.slice(0, 10).map(w => ({ word: w, quizType: 'ja_choice' }));
+        const enChoiceWords = selected.slice(10, 16).map(w => ({ word: w, quizType: 'en_choice' }));
+        const enTypingWords = selected.slice(16, 20).map(w => ({ word: w, quizType: 'en_typing' }));
+
+        currentQuestions = [...jaChoiceWords, ...enChoiceWords, ...enTypingWords];
+        setupQuiz();
+    }
+
+    function setupQuiz() {
+        currentIndex = 0;
+        score = 0;
+        mistakeList = [];
+        switchScreen('quiz-screen');
+        showQuestion();
+    }
+
+    function confirmQuitQuiz() {
+        if (confirm("テストを中断してメニューに戻りますか？")) {
+            if (currentMode === 'learn') {
+                showLearnMenu(currentChapterOrRange);
+            } else {
+                selectMode('test');
+            }
+        }
+    }
+
+    function startRetryMistakes() {
+        getAudioContext();
+        currentTargetName += " (再テスト)";
+        currentQuestions = [...mistakeList].sort(() => Math.random() - 0.5);
+        sessionWords = currentQuestions.map(q => q.word);
+        currentIndex = 0;
+        score = 0;
+        mistakeList = [];
+        switchScreen('quiz-screen');
+        showQuestion();
+    }
+
+    function retryCurrentTest() {
+        if (currentMode === 'learn') {
+            startLearnQuizWithType(currentSelectedQuizType);
+        } else {
+            startTestQuiz(currentChapterOrRange);
+        }
+    }
+
+    function showQuestion() {
+        const qObj = currentQuestions[currentIndex];
+        const q = qObj.word;
+        const type = qObj.quizType;
+
+        document.getElementById('progress').innerText = `第 ${currentIndex + 1} 問 / 全 ${currentQuestions.length} 問`;
+        document.getElementById('feedback-banner').innerText = "";
+        document.getElementById('feedback-banner').className = "feedback-banner";
+
+        const badge = document.getElementById('quiz-type-badge');
+        const speakerBtn = document.getElementById('speaker-btn');
+        const choicesContainer = document.getElementById('choices-container');
+        const typingContainer = document.getElementById('typing-container');
+
+        choicesContainer.style.display = 'none';
+        typingContainer.style.display = 'none';
+
+        if (type === 'ja_choice') {
+            badge.innerText = "📖 和訳 4択 (英 ➔ 日)";
+            document.getElementById('question-text').innerText = q.english;
+            speakerBtn.style.display = 'flex';
+            speakWord(q.english);
+
+            choicesContainer.style.display = 'flex';
+            const dummies = wordsData
+                .filter(w => w.japanese !== q.japanese)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3)
+                .map(w => w.japanese);
+
+            const choices = [...dummies, q.japanese].sort(() => Math.random() - 0.5);
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = choice;
+                btn.onclick = () => selectChoice(btn, choice, q.japanese, qObj);
+                choicesContainer.appendChild(btn);
+            });
+
+        } else if (type === 'en_choice') {
+            badge.innerText = "🔤 英訳 4択 (日 ➔ 英)";
+            document.getElementById('question-text').innerText = q.detail;
+            speakerBtn.style.display = 'none';
+
+            choicesContainer.style.display = 'flex';
+            const dummies = wordsData
+                .filter(w => w.english !== q.english)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3)
+                .map(w => w.english);
+
+            const choices = [...dummies, q.english].sort(() => Math.random() - 0.5);
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = choice;
+                btn.onclick = () => selectChoice(btn, choice, q.english, qObj);
+                choicesContainer.appendChild(btn);
+            });
+
+        } else if (type === 'en_typing') {
+            badge.innerText = "⌨️ 英訳 タイピング (日 ➔ 英)";
+            document.getElementById('question-text').innerText = q.detail;
+            speakerBtn.style.display = 'none';
+
+            typingContainer.style.display = 'flex';
+            const input = document.getElementById('typing-input');
+            input.value = q.english.charAt(0);
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 100);
+        }
+    }
+
+    function selectChoice(btn, selected, correct, qObj) {
+        const buttons = document.querySelectorAll('#choices-container .choice-btn');
+        buttons.forEach(b => b.disabled = true);
+
+        const banner = document.getElementById('feedback-banner');
+        const isCorrect = (selected === correct);
+
+        recordWordResult(qObj.word.english, qObj.quizType, isCorrect);
+
+        if (isCorrect) {
+            btn.classList.add('correct');
+            banner.innerText = "✨ 正解！";
+            banner.classList.add('correct-text');
+            if (qObj.quizType !== 'ja_choice') {
+                speakWord(qObj.word.english);
+            }
+            playCorrectSound();
+            score++;
+        } else {
+            btn.classList.add('incorrect');
+            banner.innerText = `❌ 不正解 (正解: ${correct})`;
+            banner.classList.add('incorrect-text');
+            playIncorrectSound();
+
+            if (!mistakeList.some(item => item.word.english === qObj.word.english && item.quizType === qObj.quizType)) {
+                mistakeList.push(qObj);
+            }
+            buttons.forEach(b => {
+                if (b.innerText === correct) b.classList.add('correct');
+            });
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 900);
+    }
+
+    function submitTypingAnswer() {
+        const input = document.getElementById('typing-input');
+        const userAns = input.value.trim().toLowerCase();
+        const qObj = currentQuestions[currentIndex];
+        const correctAns = qObj.word.english.trim().toLowerCase();
+
+        const banner = document.getElementById('feedback-banner');
+        const isCorrect = (userAns === correctAns);
+
+        recordWordResult(qObj.word.english, qObj.quizType, isCorrect);
+
+        if (isCorrect) {
+            banner.innerText = "✨ 正解！";
+            banner.classList.add('correct-text');
+            speakWord(qObj.word.english);
+            playCorrectSound();
+            score++;
+        } else {
+            banner.innerText = `❌ 不正解 (正解: ${qObj.word.english})`;
+            banner.classList.add('incorrect-text');
+            playIncorrectSound();
+
+            if (!mistakeList.some(item => item.word.english === qObj.word.english && item.quizType === qObj.quizType)) {
+                mistakeList.push(qObj);
+            }
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1200);
+    }
+
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const typingContainer = document.getElementById('typing-container');
+            if (typingContainer && typingContainer.style.display !== 'none') {
+                submitTypingAnswer();
+            }
+        }
+    });
+
+    function showResult() {
+        switchScreen('result-screen');
+        changeResultMikanSpeech();
+        
+        if (mistakeList.length === 0) {
+            playVictoryFanfare();
+        } else {
+            playShortFanfare();
+        }
+
+        const total = currentQuestions.length;
+        document.getElementById('score-text').innerText = `正解数: ${score} / ${total} 問`;
+
+        const actionBtn = document.getElementById('result-back-action-btn');
+        if (currentMode === 'learn') {
+            actionBtn.innerText = "出題・回答形式選択に戻る";
+        } else {
+            actionBtn.innerText = "テスト範囲選択に戻る";
+        }
+
+        const retryBtn = document.getElementById('retry-mistakes-btn');
+        if (mistakeList.length > 0) {
+            retryBtn.style.display = 'block';
+            retryBtn.innerText = `間違えた問題 (${mistakeList.length}問) を再テスト`;
+        } else {
+            retryBtn.style.display = 'none';
+        }
+
+        const inlineContainer = document.getElementById('mistake-inline-container');
+        inlineContainer.innerHTML = '';
+
+        if (mistakeList.length > 0) {
+            const title = document.createElement('div');
+            title.innerHTML = '<h3 style="margin: 10px 0 6px 0; font-size: 1rem; color: #dc2626;">❌ 間違えた単語と出題形式</h3>';
+            inlineContainer.appendChild(title);
+
+            mistakeList.forEach(qObj => {
+                const w = qObj.word;
+                let typeName = "";
+                if (qObj.quizType === 'ja_choice') typeName = "和訳4択";
+                else if (qObj.quizType === 'en_choice') typeName = "英訳4択";
+                else if (qObj.quizType === 'en_typing') typeName = "英訳タイピング";
+
+                const div = document.createElement('div');
+                div.className = 'detail-item';
+                div.style.borderLeft = '4px solid #ef4444';
+                div.innerHTML = `
+                    <div style="font-size: 0.8rem; color: #c2410c; font-weight: bold; margin-bottom: 2px;">【形式: ${typeName}】</div>
+                    <div class="detail-word">${w.english} （${w.japanese}）</div>
+                    <div style="margin-top: 4px; color: #334155;">${w.detail}</div>
+                `;
+                inlineContainer.appendChild(div);
+            });
+        } else {
+            const congrats = document.createElement('div');
+            congrats.innerHTML = '<p style="text-align: center; color: #16a34a; font-weight: bold; margin: 10px 0;">✨ 全問正解おめでとうございます！</p>';
+            inlineContainer.appendChild(congrats);
+        }
+    }
+
     function showLearnVocabularyCheck() {
+        getAudioContext();
         const listContainer = document.getElementById('vocab-check-list');
         listContainer.innerHTML = '';
         document.getElementById('vocab-check-title').innerText = `Chapter ${currentChapterOrRange} 単語一覧`;
@@ -3266,164 +3575,9 @@
         document.getElementById('vocab-check-screen').style.display = 'none';
     }
 
-    function startTestQuiz(testRange) {
-        const filtered = wordsData.filter(w => w.test === testRange);
-        const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, 20);
-        sessionWords = [...selected];
-        currentQuestions = [...selected];
-        setupQuiz();
-    }
-
-    function setupQuiz() {
-        currentIndex = 0;
-        score = 0;
-        mistakeList = [];
-        switchScreen('quiz-screen');
-        showQuestion();
-    }
-
-    function confirmQuitQuiz() {
-        if (confirm("テストを中断してチャプター選択に戻りますか？")) {
-            if (currentMode === 'learn') {
-                showLearnMenu(currentChapterOrRange);
-            } else {
-                selectMode('test');
-            }
-        }
-    }
-
-    function startRetryMistakes() {
-        currentTargetName += " (再テスト)";
-        currentQuestions = [...mistakeList].sort(() => Math.random() - 0.5);
-        sessionWords = [...currentQuestions];
-        currentIndex = 0;
-        score = 0;
-        mistakeList = [];
-        switchScreen('quiz-screen');
-        showQuestion();
-    }
-
-    function retryCurrentTest() {
-        if (currentMode === 'learn') {
-            startActualLearnQuiz();
-        } else {
-            startTestQuiz(currentChapterOrRange);
-        }
-    }
-
-    function showQuestion() {
-        const q = currentQuestions[currentIndex];
-        document.getElementById('progress').innerText = `第 ${currentIndex + 1} 問 / 全 ${currentQuestions.length} 問`;
-        document.getElementById('feedback-banner').innerText = "";
-        document.getElementById('feedback-banner').className = "feedback-banner";
-        document.getElementById('question-word').innerText = q.english;
-
-        speakWord(q.english);
-
-        const dummies = wordsData
-            .filter(w => w.japanese !== q.japanese)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 3)
-            .map(w => w.japanese);
-
-        const choices = [...dummies, q.japanese].sort(() => Math.random() - 0.5);
-        const container = document.getElementById('choices-container');
-        container.innerHTML = '';
-
-        choices.forEach(choice => {
-            const btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice;
-            btn.onclick = () => selectChoice(btn, choice, q.japanese, q);
-            container.appendChild(btn);
-        });
-    }
-
-    function selectChoice(btn, selected, correct, q) {
-        const buttons = document.querySelectorAll('#choices-container .choice-btn');
-        buttons.forEach(b => b.disabled = true);
-
-        const banner = document.getElementById('feedback-banner');
-        const isCorrect = (selected === correct);
-
-        recordWordResult(q.english, isCorrect);
-
-        if (isCorrect) {
-            btn.classList.add('correct');
-            banner.innerText = "✨ 正解！";
-            banner.classList.add('correct-text');
-            playCorrectSound();
-            score++;
-        } else {
-            btn.classList.add('incorrect');
-            banner.innerText = "❌ 残念…不正解";
-            banner.classList.add('incorrect-text');
-            playIncorrectSound();
-
-            if (!mistakeList.some(item => item.english === q.english)) {
-                mistakeList.push(q);
-            }
-            buttons.forEach(b => {
-                if (b.innerText === correct) b.classList.add('correct');
-            });
-        }
-
-        setTimeout(() => {
-            currentIndex++;
-            if (currentIndex < currentQuestions.length) {
-                showQuestion();
-            } else {
-                showResult();
-            }
-        }, 700);
-    }
-
-    function showResult() {
-        switchScreen('result-screen');
-        changeResultMikanSpeech();
-        
-        if (mistakeList.length === 0) {
-            playVictoryFanfare();
-        } else {
-            playShortFanfare();
-        }
-
-        const total = currentQuestions.length;
-        document.getElementById('score-text').innerText = `正解数: ${score} / ${total} 問`;
-
-        const retryBtn = document.getElementById('retry-mistakes-btn');
-        if (mistakeList.length > 0) {
-            retryBtn.style.display = 'block';
-            retryBtn.innerText = `間違えた問題 (${mistakeList.length}問) を再テスト`;
-        } else {
-            retryBtn.style.display = 'none';
-        }
-
-        const inlineContainer = document.getElementById('mistake-inline-container');
-        inlineContainer.innerHTML = '';
-
-        if (mistakeList.length > 0) {
-            const title = document.createElement('div');
-            title.innerHTML = '<h3 style="margin: 10px 0 6px 0; font-size: 1rem; color: #dc2626;">❌ 間違えた単語の解説</h3>';
-            inlineContainer.appendChild(title);
-
-            mistakeList.forEach(w => {
-                const div = document.createElement('div');
-                div.className = 'detail-item';
-                div.style.borderLeft = '4px solid #ef4444';
-                div.innerHTML = `<div class="detail-word">${w.english} （${w.japanese}）</div><div style="margin-top: 4px; color: #334155;">${w.detail}</div>`;
-                inlineContainer.appendChild(div);
-            });
-        } else {
-            const congrats = document.createElement('div');
-            congrats.innerHTML = '<p style="text-align: center; color: #16a34a; font-weight: bold; margin: 10px 0;">✨ 全問正解おめでとうございます！</p>';
-            inlineContainer.appendChild(congrats);
-        }
-    }
-
-    // --- 履歴・アチーブメント画面 ---
+    // --- 成績履歴画面 (独立オーバーレイ) ---
     function showHistoryScreen() {
+        getAudioContext();
         const listContainer = document.getElementById('history-list');
         listContainer.innerHTML = '';
         document.getElementById('data-management-panel').style.display = 'none';
@@ -3442,52 +3596,17 @@
             const groupWords = groups[groupKey];
             const achieve = calcChapterAchievement(groupWords);
 
-            const header = document.createElement('div');
-            header.className = 'accordion-header';
-            header.innerHTML = `
-                <span>No. ${groupKey}</span>
-                <span class="badge ${achieve.learnedRatio !== '未学習' ? 'completed' : ''}">達成率: ${achieve.learnedRatio}</span>
-            `;
-
-            const content = document.createElement('div');
-            content.className = 'accordion-content';
-
-            groupWords.forEach(w => {
-                const history = map[w.english] || [];
-                const stats = calcWordStats(history);
-                
-                let marksHtml = "";
-                for (let i = 0; i < 5; i++) {
-                    if (i < history.length) {
-                        marksHtml += history[i] ? "🟢" : "🔴";
-                    } else {
-                        marksHtml += "⚪";
-                    }
-                }
-
-                const card = document.createElement('div');
-                card.className = 'word-history-card';
-                card.onclick = () => showWordDetailModal(w);
-
-                card.innerHTML = `
-                    <div>
-                        <div style="font-weight: bold; color: #1e293b;">${w.number}. ${w.english} <span style="font-size:0.8rem; color:#64748b;">(${w.japanese})</span></div>
-                        <div class="history-marks" style="margin-top:2px;">${marksHtml}</div>
-                    </div>
-                    <div style="font-weight: bold; color: ${history.length > 0 ? '#166534' : '#94a3b8'};">
-                        ${history.length > 0 ? stats.rate + '%' : '未測定'}
-                    </div>
-                `;
-                content.appendChild(card);
-            });
-
-            header.onclick = () => {
-                const isOpen = content.style.display === 'flex';
-                content.style.display = isOpen ? 'none' : 'flex';
+            // アコーディオンではなく、タップすると専用の独立オーバーレイを開くボタンに変更
+            const btn = document.createElement('button');
+            btn.className = 'btn chapter-btn';
+            const badgeClass = achieve.learnedRatio !== '未学習' ? 'badge completed' : 'badge';
+            btn.innerHTML = `<span>No. ${groupKey}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
+            
+            btn.onclick = () => {
+                showHistoryGroupScreen(groupKey, groupWords, map);
             };
 
-            listContainer.appendChild(header);
-            listContainer.appendChild(content);
+            listContainer.appendChild(btn);
         });
 
         document.getElementById('history-screen').style.display = 'flex';
@@ -3495,6 +3614,60 @@
 
     function hideHistoryScreen() {
         document.getElementById('history-screen').style.display = 'none';
+    }
+
+    // --- 履歴：特定の範囲の単語一覧を表示する独立オーバーレイ ---
+    function showHistoryGroupScreen(groupKey, groupWords, map) {
+        document.getElementById('history-group-title').innerText = `No. ${groupKey} 単語一覧・履歴`;
+        const listContainer = document.getElementById('history-group-list');
+        listContainer.innerHTML = '';
+
+        const renderMarks = (arr, limit) => {
+            let html = "";
+            for (let i = 0; i < limit; i++) {
+                if (arr && i < arr.length) {
+                    html += arr[i] ? "🟢" : "🔴";
+                } else {
+                    html += "⚪";
+                }
+            }
+            return html;
+        };
+
+        groupWords.forEach(w => {
+            const hObj = map[w.english] || {};
+            const jaChoiceArr = Array.isArray(hObj) ? hObj : (hObj.ja_choice || []);
+            const enChoiceArr = Array.isArray(hObj) ? [] : (hObj.en_choice || []);
+            const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
+
+            const card = document.createElement('div');
+            card.className = 'word-history-card';
+            // タップすると単語意味のポップアップモーダルが開く
+            card.onclick = () => showWordDetailModal(w);
+
+            card.innerHTML = `
+                <div style="font-weight: bold; color: #1e293b; font-size:0.95rem;">${w.number}. ${w.english} <span style="font-size:0.8rem; color:#64748b;">(${w.japanese})</span></div>
+                <div class="history-row">
+                    <span style="color:#9a3412;">和訳4択 (4回):</span>
+                    <span class="history-marks">${renderMarks(jaChoiceArr, 4)}</span>
+                </div>
+                <div class="history-row">
+                    <span style="color:#0284c7;">英訳4択 (4回):</span>
+                    <span class="history-marks">${renderMarks(enChoiceArr, 4)}</span>
+                </div>
+                <div class="history-row">
+                    <span style="color:#7c3aed;">英訳タイピング (3回):</span>
+                    <span class="history-marks">${renderMarks(enTypingArr, 3)}</span>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+
+        document.getElementById('history-group-screen').style.display = 'flex';
+    }
+
+    function hideHistoryGroupScreen() {
+        document.getElementById('history-group-screen').style.display = 'none';
     }
 
     function showWordDetailModal(w) {
@@ -3509,17 +3682,18 @@
 
     function clearHistory() {
         if (confirm("すべての単語の学習履歴および達成率データをクリアしますか？")) {
-            localStorage.removeItem('vocab_word_history_map');
+            localStorage.removeItem('vocab_word_history_map_v2');
             showHistoryScreen();
         }
     }
 
     function showDetailScreen() {
+        getAudioContext();
         const listContainer = document.getElementById('detail-list');
         listContainer.innerHTML = '';
 
         sessionWords.forEach(w => {
-            const isMistaken = mistakeList.some(m => m.english === w.english);
+            const isMistaken = mistakeList.some(m => m.word.english === w.english);
             const resultBadge = isMistaken 
                 ? '<span style="color: #dc2626; font-weight: bold; font-size: 0.85rem; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">❌ 不正解</span>' 
                 : '<span style="color: #16a34a; font-weight: bold; font-size: 0.85rem; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">✨ 正解</span>';
