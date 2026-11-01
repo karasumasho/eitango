@@ -240,7 +240,6 @@
             color: #1f2937;
         }
         
-        /* 独立オーバーレイ画面共通スタイル */
         .overlay-screen {
             position: absolute;
             top: 0;
@@ -494,9 +493,9 @@
         "＼ソシテ カガヤク ウルトラ ソウル／", "＼オナカ スイタワー／", "＼４０ビョウデ シタクシナ！／",
         "＼ココロヲ モヤセ！／", "＼ミカン デス ケド ナニカ？／", "＼ワレワレハ ミカンセイジン ダ／",
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
-        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
-        "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤダ／",
+        "＼シランケド／", "＼ソレガ キミノ{ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ{オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
@@ -2864,7 +2863,7 @@
         
         const limit = maxHistoryCounts[type] || 4;
         if (map[englishWord][type].length > limit) {
-            map[englishWord][type].shift();
+            map[englishWord][type] = map[englishWord][type].slice(-limit);
         }
         
         localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(map));
@@ -2872,9 +2871,16 @@
 
     function calcWordStats(historyArray, limit) {
         if (!historyArray || historyArray.length === 0) return { rate: 0, count: 0 };
-        const correctCount = historyArray.filter(r => r === true).length;
-        const rate = Math.round((correctCount / limit) * 100);
-        return { rate: rate, count: historyArray.length, correctCount: correctCount };
+        
+        // 旧データ等で要素数が上限を超えている場合は直近規定数分に切り詰め
+        const validArray = historyArray.slice(-limit);
+        const correctCount = validArray.filter(r => r === true).length;
+        
+        // 達成率は最大100%にクランプ
+        const rawRate = Math.round((correctCount / limit) * 100);
+        const rate = Math.min(100, rawRate);
+        
+        return { rate: rate, count: validArray.length, correctCount: correctCount };
     }
 
     function calcChapterAchievement(wordsInChapter) {
@@ -2897,14 +2903,14 @@
                     }
                 });
                 if (wordCount > 0) {
-                    totalRate += Math.round(wordSum / wordCount);
+                    totalRate += Math.min(100, Math.round(wordSum / wordCount));
                     learnedCount++;
                 }
             }
         });
 
         if (learnedCount === 0) return { rate: 0, learnedRatio: "未学習" };
-        const avgRate = Math.round(totalRate / wordsInChapter.length);
+        const avgRate = Math.min(100, Math.round(totalRate / wordsInChapter.length));
         return { rate: avgRate, learnedRatio: `${avgRate}%` };
     }
 
@@ -2927,12 +2933,13 @@
                     }
                 });
                 if (wordCount > 0) {
-                    totalRate += Math.round(wordSum / wordCount);
+                    totalRate += Math.min(100, Math.round(wordSum / wordCount));
                 }
             }
         });
 
-        const overallRate = wordsData.length > 0 ? Math.round(totalRate / wordsData.length) : 0;
+        const rawOverall = wordsData.length > 0 ? Math.round(totalRate / wordsData.length) : 0;
+        const overallRate = Math.min(100, rawOverall);
         document.getElementById('total-achievement-text').innerText = `${overallRate}%`;
 
         const minSize = 65;
@@ -2983,6 +2990,17 @@
                 if (typeof importedMap !== 'object' || importedMap === null) {
                     throw new Error("無効なファイル形式です。");
                 }
+                
+                // インポート時に配列長さを自動補正
+                Object.keys(importedMap).forEach(w => {
+                    const item = importedMap[w];
+                    if (item && typeof item === 'object') {
+                        if (Array.isArray(item.ja_choice)) item.ja_choice = item.ja_choice.slice(-maxHistoryCounts.ja_choice);
+                        if (Array.isArray(item.en_choice)) item.en_choice = item.en_choice.slice(-maxHistoryCounts.en_choice);
+                        if (Array.isArray(item.en_typing)) item.en_typing = item.en_typing.slice(-maxHistoryCounts.en_typing);
+                    }
+                });
+
                 localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(importedMap));
                 alert("学習履歴データの復元が完了しました！");
                 showHistoryScreen();
@@ -3575,7 +3593,6 @@
         document.getElementById('vocab-check-screen').style.display = 'none';
     }
 
-    // --- 成績履歴画面 (独立オーバーレイ) ---
     function showHistoryScreen() {
         getAudioContext();
         const listContainer = document.getElementById('history-list');
@@ -3596,7 +3613,6 @@
             const groupWords = groups[groupKey];
             const achieve = calcChapterAchievement(groupWords);
 
-            // アコーディオンではなく、タップすると専用の独立オーバーレイを開くボタンに変更
             const btn = document.createElement('button');
             btn.className = 'btn chapter-btn';
             const badgeClass = achieve.learnedRatio !== '未学習' ? 'badge completed' : 'badge';
@@ -3616,7 +3632,6 @@
         document.getElementById('history-screen').style.display = 'none';
     }
 
-    // --- 履歴：特定の範囲の単語一覧を表示する独立オーバーレイ ---
     function showHistoryGroupScreen(groupKey, groupWords, map) {
         document.getElementById('history-group-title').innerText = `No. ${groupKey} 単語一覧・履歴`;
         const listContainer = document.getElementById('history-group-list');
@@ -3624,9 +3639,10 @@
 
         const renderMarks = (arr, limit) => {
             let html = "";
+            const validArr = arr ? arr.slice(-limit) : [];
             for (let i = 0; i < limit; i++) {
-                if (arr && i < arr.length) {
-                    html += arr[i] ? "🟢" : "🔴";
+                if (i < validArr.length) {
+                    html += validArr[i] ? "🟢" : "🔴";
                 } else {
                     html += "⚪";
                 }
@@ -3642,7 +3658,6 @@
 
             const card = document.createElement('div');
             card.className = 'word-history-card';
-            // タップすると単語意味のポップアップモーダルが開く
             card.onclick = () => showWordDetailModal(w);
 
             card.innerHTML = `
