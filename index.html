@@ -386,7 +386,7 @@
             <button class="btn primary-btn" style="padding: 14px;" onclick="startLearnQuizWithType('ja_choice')">📖 和訳 4択テスト (英 ➔ 日)</button>
             <button class="btn primary-btn" style="padding: 14px; background-color: #0284c7;" onclick="startLearnQuizWithType('en_choice')">🔤 英訳 4択テスト (日 ➔ 英)</button>
             <button class="btn primary-btn" style="padding: 14px; background-color: #7c3aed;" onclick="startLearnQuizWithType('en_typing')">⌨️ 英訳 タイピング (日 ➔ 英)</button>
-            <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする (意味を見る)</button>
+            <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする (意味・成績を見る)</button>
         </div>
         <button class="btn back-btn" onclick="backToSubChapters()">チャプター選択に戻る</button>
     </div>
@@ -445,6 +445,7 @@
     <!-- ⑤-2 学習前チャプター単語チェック画面 (独立オーバーレイ) -->
     <div id="vocab-check-screen" class="overlay-screen">
         <h2 style="color: #7c2d12;" id="vocab-check-title">チャプター単語一覧・意味</h2>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 単語をタップすると詳しい意味を見られます</p>
         <div class="scroll-container" id="vocab-check-list" style="margin-bottom: 10px;"></div>
         <button class="btn primary-btn" onclick="hideVocabCheckScreen()">戻る</button>
     </div>
@@ -493,9 +494,9 @@
         "＼ソシテ カガヤク ウルトラ ソウル／", "＼オナカ スイタワー／", "＼４０ビョウデ シタクシナ！／",
         "＼ココロヲ モヤセ！／", "＼ミカン デス ケド ナニカ？／", "＼ワレワレハ ミカンセイジン ダ／",
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
-        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤダ／",
-        "＼シランケド／", "＼ソレガ キミノ{ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ{オレノモノ／",
+        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
+        "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
@@ -2848,7 +2849,7 @@
         return JSON.parse(localStorage.getItem('vocab_word_history_map_v2')) || {};
     }
 
-    function recordWordResult(englishWord, type, isCorrect) {
+    function recordWordResult(englishWord, type, isCorrect, userAns = "") {
         let map = getWordHistoryMap();
         if (!map[englishWord]) {
             map[englishWord] = { ja_choice: [], en_choice: [], en_typing: [] };
@@ -2871,15 +2872,10 @@
 
     function calcWordStats(historyArray, limit) {
         if (!historyArray || historyArray.length === 0) return { rate: 0, count: 0 };
-        
-        // 旧データ等で要素数が上限を超えている場合は直近規定数分に切り詰め
         const validArray = historyArray.slice(-limit);
         const correctCount = validArray.filter(r => r === true).length;
-        
-        // 達成率は最大100%にクランプ
         const rawRate = Math.round((correctCount / limit) * 100);
         const rate = Math.min(100, rawRate);
-        
         return { rate: rate, count: validArray.length, correctCount: correctCount };
     }
 
@@ -2991,7 +2987,6 @@
                     throw new Error("無効なファイル形式です。");
                 }
                 
-                // インポート時に配列長さを自動補正
                 Object.keys(importedMap).forEach(w => {
                     const item = importedMap[w];
                     if (item && typeof item === 'object') {
@@ -3259,6 +3254,17 @@
             listContainer.appendChild(btn);
         });
 
+        // 1か所目：50語ごとのチャプターを選んだあと一番下に「成績を見る」を追加
+        const scoreBtn = document.createElement('button');
+        scoreBtn.className = 'btn history-btn';
+        scoreBtn.style.marginTop = '10px';
+        scoreBtn.innerText = `📊 No. ${range} の成績を見る`;
+        scoreBtn.onclick = () => {
+            const map = getWordHistoryMap();
+            showHistoryGroupScreen(range, filteredWords, map);
+        };
+        listContainer.appendChild(scoreBtn);
+
         switchScreen('chapter-screen');
     }
 
@@ -3446,7 +3452,8 @@
             playIncorrectSound();
 
             if (!mistakeList.some(item => item.word.english === qObj.word.english && item.quizType === qObj.quizType)) {
-                mistakeList.push(qObj);
+                // 不正解の回答を保持
+                mistakeList.push({ ...qObj, userAns: selected });
             }
             buttons.forEach(b => {
                 if (b.innerText === correct) b.classList.add('correct');
@@ -3486,7 +3493,7 @@
             playIncorrectSound();
 
             if (!mistakeList.some(item => item.word.english === qObj.word.english && item.quizType === qObj.quizType)) {
-                mistakeList.push(qObj);
+                mistakeList.push({ ...qObj, userAns: userAns });
             }
         }
 
@@ -3508,6 +3515,22 @@
             }
         }
     });
+
+    // タイピングの不一致部分を赤字ハイライトする関数
+    function formatDiffHTML(user, correct) {
+        let html = "";
+        const maxLen = Math.max(user.length, correct.length);
+        for (let i = 0; i < maxLen; i++) {
+            const uChar = user[i] || "";
+            const cChar = correct[i] || "";
+            if (uChar === cChar) {
+                html += uChar;
+            } else {
+                html += `<span style="color: #dc2626; font-weight: bold; text-decoration: underline;">${uChar}</span>`;
+            }
+        }
+        return html;
+    }
 
     function showResult() {
         switchScreen('result-screen');
@@ -3542,15 +3565,24 @@
 
         if (mistakeList.length > 0) {
             const title = document.createElement('div');
-            title.innerHTML = '<h3 style="margin: 10px 0 6px 0; font-size: 1rem; color: #dc2626;">❌ 間違えた単語と出題形式</h3>';
+            title.innerHTML = '<h3 style="margin: 10px 0 6px 0; font-size: 1rem; color: #dc2626;">❌ 間違えた単語と回答</h3>';
             inlineContainer.appendChild(title);
 
-            mistakeList.forEach(qObj => {
-                const w = qObj.word;
+            mistakeList.forEach(item => {
+                const w = item.word;
                 let typeName = "";
-                if (qObj.quizType === 'ja_choice') typeName = "和訳4択";
-                else if (qObj.quizType === 'en_choice') typeName = "英訳4択";
-                else if (qObj.quizType === 'en_typing') typeName = "英訳タイピング";
+                if (item.quizType === 'ja_choice') typeName = "和訳4択";
+                else if (item.quizType === 'en_choice') typeName = "英訳4択";
+                else if (item.quizType === 'en_typing') typeName = "英訳タイピング";
+
+                let ansDisplayHtml = "";
+                if (item.quizType === 'en_typing') {
+                    // タイピングの場合は不一致部分を赤字ハイライト
+                    const diffHTML = formatDiffHTML(item.userAns || "", w.english);
+                    ansDisplayHtml = `あなたの回答: <span style="font-family: monospace; background: #fff; padding: 2px 4px; border-radius: 4px;">${diffHTML}</span><br>正解: <strong style="color: #16a34a;">${w.english}</strong>`;
+                } else {
+                    ansDisplayHtml = `あなたの回答: <span style="color: #dc2626; font-weight: bold;">${item.userAns}</span><br>正解: <strong style="color: #16a34a;">${item.quizType === 'ja_choice' ? w.japanese : w.english}</strong>`;
+                }
 
                 const div = document.createElement('div');
                 div.className = 'detail-item';
@@ -3558,7 +3590,8 @@
                 div.innerHTML = `
                     <div style="font-size: 0.8rem; color: #c2410c; font-weight: bold; margin-bottom: 2px;">【形式: ${typeName}】</div>
                     <div class="detail-word">${w.english} （${w.japanese}）</div>
-                    <div style="margin-top: 4px; color: #334155;">${w.detail}</div>
+                    <div style="margin: 4px 0; font-size: 0.9rem; background: #fee2e2; padding: 6px; border-radius: 6px;">${ansDisplayHtml}</div>
+                    <div style="margin-top: 4px; color: #334155; font-size: 0.85rem;">${w.detail}</div>
                 `;
                 inlineContainer.appendChild(div);
             });
@@ -3569,21 +3602,56 @@
         }
     }
 
+    // 2か所目：10語ごとのチャプターを選んだあと「単語をチェックする」で成績・意味を確認できるようにする
     function showLearnVocabularyCheck() {
         getAudioContext();
         const listContainer = document.getElementById('vocab-check-list');
         listContainer.innerHTML = '';
-        document.getElementById('vocab-check-title').innerText = `Chapter ${currentChapterOrRange} 単語一覧`;
+        document.getElementById('vocab-check-title').innerText = `Chapter ${currentChapterOrRange} 単語一覧・成績`;
 
+        const map = getWordHistoryMap();
         const filtered = wordsData.filter(w => w.chapter === currentChapterOrRange);
+
+        const renderMarks = (arr, limit) => {
+            let html = "";
+            const validArr = arr ? arr.slice(-limit) : [];
+            for (let i = 0; i < limit; i++) {
+                if (i < validArr.length) {
+                    html += validArr[i] ? "🟢" : "🔴";
+                } else {
+                    html += "⚪";
+                }
+            }
+            return html;
+        };
+
         filtered.forEach(w => {
-            const div = document.createElement('div');
-            div.className = 'detail-item';
-            div.innerHTML = `
-                <div class="detail-word">${w.number}. ${w.english} （${w.japanese}）</div>
-                <div style="margin-top: 4px; color: #334155;">${w.detail}</div>
+            const hObj = map[w.english] || {};
+            const jaChoiceArr = Array.isArray(hObj) ? hObj : (hObj.ja_choice || []);
+            const enChoiceArr = Array.isArray(hObj) ? [] : (hObj.en_choice || []);
+            const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
+
+            const card = document.createElement('div');
+            card.className = 'word-history-card';
+            card.onclick = () => showWordDetailModal(w);
+
+            card.innerHTML = `
+                <div style="font-weight: bold; color: #c2410c; font-size:1rem;">${w.number}. ${w.english} <span style="font-size:0.85rem; color:#1e293b;">(${w.japanese})</span></div>
+                <div class="history-row">
+                    <span style="color:#9a3412;">和訳4択 (4回):</span>
+                    <span class="history-marks">${renderMarks(jaChoiceArr, 4)}</span>
+                </div>
+                <div class="history-row">
+                    <span style="color:#0284c7;">英訳4択 (4回):</span>
+                    <span class="history-marks">${renderMarks(enChoiceArr, 4)}</span>
+                </div>
+                <div class="history-row">
+                    <span style="color:#7c3aed;">英訳タイピング (3回):</span>
+                    <span class="history-marks">${renderMarks(enTypingArr, 3)}</span>
+                </div>
+                <div style="margin-top: 2px; color: #334155; font-size: 0.85rem; border-top: 1px dashed #fed7aa; pt: 4px;">${w.detail}</div>
             `;
-            listContainer.appendChild(div);
+            listContainer.appendChild(card);
         });
 
         document.getElementById('vocab-check-screen').style.display = 'flex';
