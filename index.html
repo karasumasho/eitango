@@ -2839,6 +2839,7 @@
     let sessionWords = [];
     let currentSelectedQuizType = "ja_choice";
 
+    // モードごとの集計上限数 (和訳4, 英訳4, タイピング3 = 計11pt)
     const maxHistoryCounts = {
         ja_choice: 4,
         en_choice: 4,
@@ -2862,6 +2863,7 @@
 
         map[englishWord][type].push(isCorrect);
         
+        // 直近の規定期限（4/4/3回）まで保持
         const limit = maxHistoryCounts[type] || 4;
         if (map[englishWord][type].length > limit) {
             map[englishWord][type] = map[englishWord][type].slice(-limit);
@@ -2870,72 +2872,70 @@
         localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(map));
     }
 
-    function calcWordStats(historyArray, limit) {
-        if (!historyArray || historyArray.length === 0) return { rate: 0, count: 0 };
-        const validArray = historyArray.slice(-limit);
-        const correctCount = validArray.filter(r => r === true).length;
-        const rawRate = Math.round((correctCount / limit) * 100);
-        const rate = Math.min(100, rawRate);
-        return { rate: rate, count: validArray.length, correctCount: correctCount };
+    // 単語1つあたりの正解獲得ポイント（分子）を取得
+    function getWordCorrectPoints(hObj) {
+        if (!hObj) return 0;
+        let points = 0;
+
+        const types = ['ja_choice', 'en_choice', 'en_typing'];
+        types.forEach(t => {
+            let arr = [];
+            if (Array.isArray(hObj)) {
+                if (t === 'ja_choice') arr = hObj;
+            } else if (hObj[t] && Array.isArray(hObj[t])) {
+                arr = hObj[t];
+            }
+            
+            const limit = maxHistoryCounts[t];
+            const validArr = arr.slice(-limit);
+            points += validArr.filter(r => r === true).length;
+        });
+
+        return points;
     }
 
+    // チャプターごとの達成率（全単語の正解ポイント合計 / (単語数 * 11)）
     function calcChapterAchievement(wordsInChapter) {
+        if (!wordsInChapter || wordsInChapter.length === 0) return { rate: 0, learnedRatio: "未学習" };
+        
         const map = getWordHistoryMap();
-        let totalRate = 0;
-        let learnedCount = 0;
+        let totalPoints = 0;
+        let totalTestedWords = 0;
 
         wordsInChapter.forEach(w => {
             const hObj = map[w.english];
             if (hObj) {
-                const types = ['ja_choice', 'en_choice', 'en_typing'];
-                let wordSum = 0;
-                let wordCount = 0;
-                types.forEach(t => {
-                    const arr = Array.isArray(hObj) ? (t === 'ja_choice' ? hObj : []) : (hObj[t] || []);
-                    if (arr.length > 0) {
-                        const limit = maxHistoryCounts[t];
-                        wordSum += calcWordStats(arr, limit).rate;
-                        wordCount++;
-                    }
-                });
-                if (wordCount > 0) {
-                    totalRate += Math.min(100, Math.round(wordSum / wordCount));
-                    learnedCount++;
+                const pts = getWordCorrectPoints(hObj);
+                totalPoints += pts;
+                if (pts > 0 || (hObj.ja_choice && hObj.ja_choice.length > 0) || (hObj.en_choice && hObj.en_choice.length > 0) || (hObj.en_typing && hObj.en_typing.length > 0)) {
+                    totalTestedWords++;
                 }
             }
         });
 
-        if (learnedCount === 0) return { rate: 0, learnedRatio: "未学習" };
-        const avgRate = Math.min(100, Math.round(totalRate / wordsInChapter.length));
-        return { rate: avgRate, learnedRatio: `${avgRate}%` };
+        if (totalTestedWords === 0 && totalPoints === 0) return { rate: 0, learnedRatio: "未学習" };
+
+        const maxPossiblePoints = wordsInChapter.length * 11; // 1単語あたり11pt満点
+        const rate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
+        return { rate: rate, learnedRatio: `${rate}%` };
     }
 
+    // 全体トータル達成率の計算
     function updateOverallStats() {
+        if (wordsData.length === 0) return;
+
         const map = getWordHistoryMap();
-        let totalRate = 0;
+        let totalPoints = 0;
 
         wordsData.forEach(w => {
             const hObj = map[w.english];
             if (hObj) {
-                const types = ['ja_choice', 'en_choice', 'en_typing'];
-                let wordSum = 0;
-                let wordCount = 0;
-                types.forEach(t => {
-                    const arr = Array.isArray(hObj) ? (t === 'ja_choice' ? hObj : []) : (hObj[t] || []);
-                    if (arr.length > 0) {
-                        const limit = maxHistoryCounts[t];
-                        wordSum += calcWordStats(arr, limit).rate;
-                        wordCount++;
-                    }
-                });
-                if (wordCount > 0) {
-                    totalRate += Math.min(100, Math.round(wordSum / wordCount));
-                }
+                totalPoints += getWordCorrectPoints(hObj);
             }
         });
 
-        const rawOverall = wordsData.length > 0 ? Math.round(totalRate / wordsData.length) : 0;
-        const overallRate = Math.min(100, rawOverall);
+        const maxPossiblePoints = wordsData.length * 11; // 全単語数 * 11pt
+        const overallRate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
         document.getElementById('total-achievement-text').innerText = `${overallRate}%`;
 
         const minSize = 65;
@@ -2986,7 +2986,7 @@
                 if (typeof importedMap !== 'object' || importedMap === null) {
                     throw new Error("無効なファイル形式です。");
                 }
-                
+
                 Object.keys(importedMap).forEach(w => {
                     const item = importedMap[w];
                     if (item && typeof item === 'object') {
@@ -2998,6 +2998,7 @@
 
                 localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(importedMap));
                 alert("学習履歴データの復元が完了しました！");
+                updateOverallStats();
                 showHistoryScreen();
             } catch (err) {
                 alert("ファイルの読み込みに失敗しました。正しいJSONバックアップファイルを選択してください。");
@@ -3254,7 +3255,6 @@
             listContainer.appendChild(btn);
         });
 
-        // 1か所目：50語ごとのチャプターを選んだあと一番下に「成績を見る」を追加
         const scoreBtn = document.createElement('button');
         scoreBtn.className = 'btn history-btn';
         scoreBtn.style.marginTop = '10px';
@@ -3452,7 +3452,6 @@
             playIncorrectSound();
 
             if (!mistakeList.some(item => item.word.english === qObj.word.english && item.quizType === qObj.quizType)) {
-                // 不正解の回答を保持
                 mistakeList.push({ ...qObj, userAns: selected });
             }
             buttons.forEach(b => {
@@ -3516,7 +3515,6 @@
         }
     });
 
-    // タイピングの不一致部分を赤字ハイライトする関数
     function formatDiffHTML(user, correct) {
         let html = "";
         const maxLen = Math.max(user.length, correct.length);
@@ -3577,7 +3575,6 @@
 
                 let ansDisplayHtml = "";
                 if (item.quizType === 'en_typing') {
-                    // タイピングの場合は不一致部分を赤字ハイライト
                     const diffHTML = formatDiffHTML(item.userAns || "", w.english);
                     ansDisplayHtml = `あなたの回答: <span style="font-family: monospace; background: #fff; padding: 2px 4px; border-radius: 4px;">${diffHTML}</span><br>正解: <strong style="color: #16a34a;">${w.english}</strong>`;
                 } else {
@@ -3602,7 +3599,19 @@
         }
     }
 
-    // 2か所目：10語ごとのチャプターを選んだあと「単語をチェックする」で成績・意味を確認できるようにする
+    function renderHistoryMarks(arr, limit) {
+        let html = "";
+        const validArr = arr ? arr.slice(-limit) : [];
+        for (let i = 0; i < limit; i++) {
+            if (i < validArr.length) {
+                html += validArr[i] ? "🟢" : "🔴";
+            } else {
+                html += "⚪";
+            }
+        }
+        return html;
+    }
+
     function showLearnVocabularyCheck() {
         getAudioContext();
         const listContainer = document.getElementById('vocab-check-list');
@@ -3612,44 +3621,37 @@
         const map = getWordHistoryMap();
         const filtered = wordsData.filter(w => w.chapter === currentChapterOrRange);
 
-        const renderMarks = (arr, limit) => {
-            let html = "";
-            const validArr = arr ? arr.slice(-limit) : [];
-            for (let i = 0; i < limit; i++) {
-                if (i < validArr.length) {
-                    html += validArr[i] ? "🟢" : "🔴";
-                } else {
-                    html += "⚪";
-                }
-            }
-            return html;
-        };
-
         filtered.forEach(w => {
             const hObj = map[w.english] || {};
             const jaChoiceArr = Array.isArray(hObj) ? hObj : (hObj.ja_choice || []);
             const enChoiceArr = Array.isArray(hObj) ? [] : (hObj.en_choice || []);
             const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
 
+            const pts = getWordCorrectPoints(hObj);
+            const wordRate = Math.round((pts / 11) * 100);
+
             const card = document.createElement('div');
             card.className = 'word-history-card';
             card.onclick = () => showWordDetailModal(w);
 
             card.innerHTML = `
-                <div style="font-weight: bold; color: #c2410c; font-size:1rem;">${w.number}. ${w.english} <span style="font-size:0.85rem; color:#1e293b;">(${w.japanese})</span></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: bold; color: #c2410c; font-size:1rem;">${w.number}. ${w.english} <span style="font-size:0.85rem; color:#1e293b;">(${w.japanese})</span></div>
+                    <span style="font-size:0.8rem; font-weight:bold; color:#7c2d12; background:#ffedd5; padding:2px 6px; border-radius:10px;">${pts}/11 pt (${wordRate}%)</span>
+                </div>
                 <div class="history-row">
                     <span style="color:#9a3412;">和訳4択 (4回):</span>
-                    <span class="history-marks">${renderMarks(jaChoiceArr, 4)}</span>
+                    <span class="history-marks">${renderHistoryMarks(jaChoiceArr, 4)}</span>
                 </div>
                 <div class="history-row">
                     <span style="color:#0284c7;">英訳4択 (4回):</span>
-                    <span class="history-marks">${renderMarks(enChoiceArr, 4)}</span>
+                    <span class="history-marks">${renderHistoryMarks(enChoiceArr, 4)}</span>
                 </div>
                 <div class="history-row">
                     <span style="color:#7c3aed;">英訳タイピング (3回):</span>
-                    <span class="history-marks">${renderMarks(enTypingArr, 3)}</span>
+                    <span class="history-marks">${renderHistoryMarks(enTypingArr, 3)}</span>
                 </div>
-                <div style="margin-top: 2px; color: #334155; font-size: 0.85rem; border-top: 1px dashed #fed7aa; pt: 4px;">${w.detail}</div>
+                <div style="margin-top: 2px; color: #334155; font-size: 0.85rem; border-top: 1px dashed #fed7aa; padding-top: 4px;">${w.detail}</div>
             `;
             listContainer.appendChild(card);
         });
@@ -3705,42 +3707,35 @@
         const listContainer = document.getElementById('history-group-list');
         listContainer.innerHTML = '';
 
-        const renderMarks = (arr, limit) => {
-            let html = "";
-            const validArr = arr ? arr.slice(-limit) : [];
-            for (let i = 0; i < limit; i++) {
-                if (i < validArr.length) {
-                    html += validArr[i] ? "🟢" : "🔴";
-                } else {
-                    html += "⚪";
-                }
-            }
-            return html;
-        };
-
         groupWords.forEach(w => {
             const hObj = map[w.english] || {};
             const jaChoiceArr = Array.isArray(hObj) ? hObj : (hObj.ja_choice || []);
             const enChoiceArr = Array.isArray(hObj) ? [] : (hObj.en_choice || []);
             const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
 
+            const pts = getWordCorrectPoints(hObj);
+            const wordRate = Math.round((pts / 11) * 100);
+
             const card = document.createElement('div');
             card.className = 'word-history-card';
             card.onclick = () => showWordDetailModal(w);
 
             card.innerHTML = `
-                <div style="font-weight: bold; color: #1e293b; font-size:0.95rem;">${w.number}. ${w.english} <span style="font-size:0.8rem; color:#64748b;">(${w.japanese})</span></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: bold; color: #1e293b; font-size:0.95rem;">${w.number}. ${w.english} <span style="font-size:0.8rem; color:#64748b;">(${w.japanese})</span></div>
+                    <span style="font-size:0.75rem; font-weight:bold; color:#7c2d12; background:#ffedd5; padding:2px 6px; border-radius:10px;">${pts}/11 pt (${wordRate}%)</span>
+                </div>
                 <div class="history-row">
                     <span style="color:#9a3412;">和訳4択 (4回):</span>
-                    <span class="history-marks">${renderMarks(jaChoiceArr, 4)}</span>
+                    <span class="history-marks">${renderHistoryMarks(jaChoiceArr, 4)}</span>
                 </div>
                 <div class="history-row">
                     <span style="color:#0284c7;">英訳4択 (4回):</span>
-                    <span class="history-marks">${renderMarks(enChoiceArr, 4)}</span>
+                    <span class="history-marks">${renderHistoryMarks(enChoiceArr, 4)}</span>
                 </div>
                 <div class="history-row">
                     <span style="color:#7c3aed;">英訳タイピング (3回):</span>
-                    <span class="history-marks">${renderMarks(enTypingArr, 3)}</span>
+                    <span class="history-marks">${renderHistoryMarks(enTypingArr, 3)}</span>
                 </div>
             `;
             listContainer.appendChild(card);
