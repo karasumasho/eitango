@@ -9,10 +9,10 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f97316;
             margin: 0;
-            padding: 20px;
+            padding: 20px 10px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* トップページの全体スクロールに対応するため上に配置 */
             min-height: 100vh;
             box-sizing: border-box;
         }
@@ -26,9 +26,15 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            height: 85vh;
             position: relative;
+            /* デフォルト（クイズ画面等）：アプリ風の固定ウィンドウ＋内部スクロール */
+            height: 85vh;
             overflow: hidden;
+        }
+        /* トップページ表示時のみ、高さを自動にしてページ全体でスクロールさせる */
+        .container.home-mode {
+            height: auto;
+            overflow: visible;
         }
         .screen {
             display: none;
@@ -3293,6 +3299,14 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
 
+        // トップページ（mode-screen）の時だけコンテナの固定高さを解除してページ全体スクロールにする
+        const container = document.querySelector('.container');
+        if (screenId === 'mode-screen') {
+            container.classList.add('home-mode');
+        } else {
+            container.classList.remove('home-mode');
+        }
+
         const mainTitle = document.getElementById('main-title');
         const subTitle = document.getElementById('sub-title');
 
@@ -3936,7 +3950,7 @@
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
         "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
         "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ 마エヲムケ／", "＼オマエノモノハ オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
