@@ -481,9 +481,12 @@
         
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
+        <!-- データ管理パネル -->
         <div class="data-management-panel" id="data-management-panel">
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #d97706;" onclick="forceUploadOldData()">📥 スマホ内のデータをクラウドへ強制上書き送信</button>
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #0284c7;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
+            <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importDataFromFile(event)">
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #059669;" onclick="document.getElementById('import-file-input').click()">📥 ローカルファイル（JSON）で上書き復元</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #0284c7;" onclick="exportDataToFile()">📤 現在のデータをファイルに保存</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #475569;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
             <button class="btn danger-btn" onclick="clearHistory()">⚠️ 現在のユーザーの履歴を初期化</button>
         </div>
 
@@ -539,24 +542,48 @@
         }
     }
 
-    function forceUploadOldData() {
+    // --- ローカルファイル（JSON）からデータを読み込んで上書き復元 ---
+    function importDataFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                const user = getCurrentUser();
+                
+                if (confirm(`選択したファイルから "${user}" のデータを上書き復元しますか？`)) {
+                    localStorage.setItem(`vocab_map_${user}`, JSON.stringify(importedData));
+                    syncToGAS(); // クラウド側にも同期
+                    alert("データの復元（上書き）に成功しました！");
+                    location.reload();
+                }
+            } catch (err) {
+                alert("ファイルの読み込みに失敗しました。正しいJSONファイルを選択してください。");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- 現在のデータをファイルとしてダウンロード保存 ---
+    function exportDataToFile() {
         const user = getCurrentUser();
-        const oldData = localStorage.getItem('vocab_map');
-        if (oldData) {
-            localStorage.setItem(`vocab_map_${user}`, oldData);
-        }
-        
-        const localData = localStorage.getItem(`vocab_map_${user}`);
-        if (!localData) {
-            alert("スマホ内に送信するデータが見つかりませんでした。");
+        const data = localStorage.getItem(`vocab_map_${user}`);
+        if (!data) {
+            alert("保存するデータがありません。");
             return;
         }
 
-        if (confirm(`"${user}" のスマホ内にあるデータをGoogleスプレッドシートに強制送信し、クラウド側を上書きしますか？`)) {
-            syncToGAS();
-            alert("クラウドへの強制上書き送信を実行しました！ランキングや履歴を再度ご確認ください。");
-            location.reload();
-        }
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mikan_seijin_backup_${user}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     async function syncFromGAS() {
