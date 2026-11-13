@@ -555,7 +555,7 @@
                 
                 if (confirm(`選択したファイルから "${user}" のデータを上書き復元しますか？`)) {
                     localStorage.setItem(`vocab_map_${user}`, JSON.stringify(importedData));
-                    syncToGAS(); // クラウド側にも同期
+                    syncToGAS();
                     alert("データの復元（上書き）に成功しました！");
                     location.reload();
                 }
@@ -586,6 +586,33 @@
         URL.revokeObjectURL(url);
     }
 
+    // --- 【強力な自動救済＆保護ロジック】 ---
+    async function initAppSession() {
+        const user = getCurrentUser();
+        document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
+
+        const currentUserKey = `vocab_map_${user}`;
+        const currentLocalData = localStorage.getItem(currentUserKey);
+
+        // 1. 旧バージョンの共通キー 'vocab_map' が残っていれば、現在のユーザーデータに自動移行
+        const oldCommonData = localStorage.getItem('vocab_map');
+        if (oldCommonData && (!currentLocalData || currentLocalData === "{}")) {
+            localStorage.setItem(currentUserKey, oldCommonData);
+        }
+
+        // 2. もし 'vocab_map_ゲスト' など他の古いキーにデータがあれば自動移行
+        if (!localStorage.getItem(currentUserKey) || localStorage.getItem(currentUserKey) === "{}") {
+            const guestData = localStorage.getItem('vocab_map_ゲスト');
+            if (guestData && guestData !== "{}") {
+                localStorage.setItem(currentUserKey, guestData);
+            }
+        }
+
+        // 3. クラウドからの自動読み込み（ローカルが空の場合のみ、誤上書きを防いで安全に取得）
+        await syncFromGAS();
+        showModeSelect();
+    }
+
     async function syncFromGAS() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         try {
@@ -593,7 +620,10 @@
             if (res.ok) {
                 const allData = await res.json();
                 const user = getCurrentUser();
-                if (allData[user] && !localStorage.getItem(`vocab_map_${user}`)) {
+                const currentLocal = localStorage.getItem(`vocab_map_${user}`);
+                
+                // ローカルにデータが無い場合のみ、クラウドのバックアップを自動適用
+                if (allData[user] && (!currentLocal || currentLocal === "{}")) {
                     localStorage.setItem(`vocab_map_${user}`, JSON.stringify(allData[user]));
                 }
             }
@@ -684,20 +714,6 @@
         const userKey = `vocab_map_${getCurrentUser()}`;
         localStorage.setItem(userKey, JSON.stringify(map));
         syncToGAS();
-    }
-
-    async function initAppSession() {
-        const user = getCurrentUser();
-        document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
-
-        const oldData = localStorage.getItem('vocab_map');
-        const currentUserKey = `vocab_map_${user}`;
-        if (oldData && !localStorage.getItem(currentUserKey)) {
-            localStorage.setItem(currentUserKey, oldData);
-        }
-
-        await syncFromGAS();
-        showModeSelect();
     }
 
     const wordsData = [
