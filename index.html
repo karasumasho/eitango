@@ -480,7 +480,8 @@
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
         <div class="data-management-panel" id="data-management-panel">
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 0; background-color: #0284c7;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #059669;" onclick="forceSyncLocalToGAS()">🔄 スマホ内のデータをクラウドに送信</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #0284c7;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
             <button class="btn danger-btn" onclick="clearHistory()">⚠️ 現在のユーザーの履歴を初期化</button>
         </div>
 
@@ -515,9 +516,8 @@
 </div>
 
 <script>
-    // --- ★ Google Apps Script (GAS) のウェブアプリURLを設定してください ---
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec"; 
-    // 例: "https://script.google.com/macros/s/AKfycbx.../exec"
+    // --- ★ Google Apps Script (GAS) のウェブアプリURL設定完了 ---
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec";
 
     function getCurrentUser() {
         let user = localStorage.getItem('vocab_current_user');
@@ -538,7 +538,19 @@
         }
     }
 
-    // Googleスプレッドシートから個人データを読み込む
+    function forceSyncLocalToGAS() {
+        const user = getCurrentUser();
+        const localData = localStorage.getItem(`vocab_map_${user}`);
+        if (!localData) {
+            alert(`"${user}" のデータがスマホ内に見つかりませんでした。`);
+            return;
+        }
+        if (confirm(`"${user}" のスマホ内にあるデータをGoogleスプレッドシートに送信して復旧しますか？`)) {
+            syncToGAS();
+            alert("クラウドへの送信を実行しました！ランキング画面や履歴を再度ご確認ください。");
+        }
+    }
+
     async function syncFromGAS() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         try {
@@ -555,7 +567,6 @@
         }
     }
 
-    // Googleスプレッドシートへ個人データを保存する
     async function syncToGAS() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         try {
@@ -574,7 +585,6 @@
         }
     }
 
-    // 全員ランキングの取得・表示
     async function showRankingScreen() {
         const listContainer = document.getElementById('ranking-list');
         listContainer.innerHTML = '<p style="text-align:center;">データを集計中...</p>';
@@ -644,6 +654,15 @@
     async function initAppSession() {
         const user = getCurrentUser();
         document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
+
+        // 旧バージョンデータの自動救出（未命名キーがあれば現在のユーザーに引き継ぐ）
+        const oldData = localStorage.getItem('vocab_map');
+        const currentUserKey = `vocab_map_${user}`;
+        if (oldData && !localStorage.getItem(currentUserKey)) {
+            localStorage.setItem(currentUserKey, oldData);
+            console.log("旧バージョンのデータを引き継ぎました");
+        }
+
         await syncFromGAS();
         showModeSelect();
     }
