@@ -108,6 +108,15 @@
         .history-btn:hover {
             background: #334155;
         }
+        .ranking-btn {
+            background: #d97706;
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+        .ranking-btn:hover {
+            background: #b45309;
+        }
         .back-btn {
             background: #ffedd5;
             color: #9a3412;
@@ -315,6 +324,17 @@
             color: #9a3412;
         }
 
+        .ranking-item {
+            background: #ffffff;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .data-management-panel {
             background: #ffedd5;
             border: 1px solid #fed7aa;
@@ -353,14 +373,16 @@
 
     <!-- ① モード選択画面 -->
     <div id="mode-screen" class="screen active">
+        <div id="current-user-display" style="text-align: center; font-size: 0.85rem; color: #9a3412; margin-bottom: 4px; font-weight: bold;"></div>
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem; background-color: #059669;" onclick="selectMode('test')">🎯 総合テスト (20問ミックス)</button>
+            <button class="btn ranking-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showRankingScreen()">🏆 全員ランキング・スコアボード</button>
             <button class="btn history-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showHistoryScreen()">📊 単語別アチーブメント・履歴</button>
             
             <div class="total-stats-card">
-                <div class="total-stats-title">📊 全体トータル達成率 (総合)</div>
+                <div class="total-stats-title">📊 マイ トータル達成率 (総合)</div>
                 <div class="total-stats-value" id="total-achievement-text">0%</div>
             </div>
 
@@ -458,10 +480,8 @@
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
         <div class="data-management-panel" id="data-management-panel">
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 0; background-color: #0284c7;" onclick="exportHistoryData()">📥 成績データをバックアップ (保存)</button>
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 0; background-color: #0d9488;" onclick="triggerImportFileInput()">📤 バックアップから復元</button>
-            <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importHistoryData(event)">
-            <button class="btn danger-btn" onclick="clearHistory()">⚠️ すべての学習履歴を初期化</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 0; background-color: #0284c7;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
+            <button class="btn danger-btn" onclick="clearHistory()">⚠️ 現在のユーザーの履歴を初期化</button>
         </div>
 
         <button class="btn" style="background-color: #475569; color: white; margin-bottom: 4px; padding: 10px;" onclick="toggleDataManagementPanel()">⚙️ データ管理</button>
@@ -476,6 +496,14 @@
         <button class="btn primary-btn" onclick="hideHistoryGroupScreen()">戻る</button>
     </div>
 
+    <!-- ⑧ 全員ランキング画面 (独立オーバーレイ) -->
+    <div id="ranking-screen" class="overlay-screen">
+        <h2 style="color: #7c2d12;">🏆 全員ランキングボード</h2>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">全プレイヤーの達成率リアルタイム順位</p>
+        <div class="scroll-container" id="ranking-list" style="margin-bottom: 10px;"></div>
+        <button class="btn primary-btn" onclick="hideRankingScreen()">戻る</button>
+    </div>
+
     <!-- ⑦ 単語詳細ポップアップモーダル -->
     <div id="word-detail-modal" class="overlay-screen" style="justify-content: center; align-items: center; background: rgba(0,0,0,0.5); z-index: 60;">
         <div style="background: #fff7ed; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px; border: 2px solid #fed7aa; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
@@ -487,42 +515,139 @@
 </div>
 
 <script>
-    const mikanSpeeches = [
-        "＼マダ ネナイノ？／", "＼アタラナケレバ ドウトイウコトハ ナイ／", "＼ボウヤ ダカラサ！／",
-        "＼ドッチナンダイ！／", "＼グーグルデ イインジャナイ？／", "＼ザクトハ チガウノダヨ。ザクトハ！／",
-        "＼ダガ コトワル！／", "＼キンキンニ ヒエテヤガルッ・・・！／", "＼ウチ ハ ウチ ヨソ ハ ヨソ／",
-        "＼ソシテ カガヤク ウルトラ ソウル／", "＼オナカ スイタワー／", "＼４０ビョウデ シタクシナ！／",
-        "＼ココロヲ モヤセ！／", "＼ミカン デス ケド ナニカ？／", "＼ワレワレハ ミカンセイジン ダ／",
-        "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
-        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
-        "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
-        "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
-        "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
-        "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
-        "＼アシタノ パン カワナ／", "＼ダッテ ニンゲン ダモノ／", "＼モウ ツキアッチャエヨ！！！／",
-        "＼サイゴマデ タッテイタ ヤツガ カツンダ／", "＼ワタシハ イマノ ハナシヲ シテイルンダヨ／",
-        "＼ゲンキ デスカ？／", "＼ライバル ハ ジブン／", "＼バルス！！／",
-        "＼イツカ キミニ ミセテアゲタイ／", "＼ニゲチャ ダメダ／",
-        "＼エライヒトニハ ワカランノデスヨ／", "＼ソコニ シビレル！ アコガレルゥ！／",
-        "＼ミカン パワー ゼンカイ／", "＼３フンダケ マッテヤル／"
-    ];
+    // --- ★ Google Apps Script (GAS) のウェブアプリURLを設定してください ---
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec"; 
+    // 例: "https://script.google.com/macros/s/AKfycbx.../exec"
 
-    function changeMikanSpeech() {
-        const textElement = document.getElementById('mikan-speech');
-        if (textElement && mikanSpeeches.length > 0) {
-            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
+    function getCurrentUser() {
+        let user = localStorage.getItem('vocab_current_user');
+        if (!user) {
+            user = prompt("ようこそ！あなたの名前（ID）を入力してください:", "ゲスト");
+            if (!user || !user.trim()) user = "ゲスト";
+            localStorage.setItem('vocab_current_user', user.trim());
+        }
+        return user.trim();
+    }
+
+    function switchUserPrompt() {
+        const newUser = prompt("切替後の名前（ID）を入力してください:", getCurrentUser());
+        if (newUser && newUser.trim()) {
+            localStorage.setItem('vocab_current_user', newUser.trim());
+            alert(`"${newUser.trim()}" さんに切り替えました。クラウドから成績を取得します。`);
+            initAppSession();
         }
     }
 
-    function changeResultMikanSpeech() {
-        const textElement = document.getElementById('result-mikan-speech');
-        if (textElement && mikanSpeeches.length > 0) {
-            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
+    // Googleスプレッドシートから個人データを読み込む
+    async function syncFromGAS() {
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+        try {
+            const res = await fetch(GAS_WEB_APP_URL);
+            if (res.ok) {
+                const allData = await res.json();
+                const user = getCurrentUser();
+                if (allData[user]) {
+                    localStorage.setItem(`vocab_map_${user}`, JSON.stringify(allData[user]));
+                }
+            }
+        } catch (err) {
+            console.log("クラウドデータの読み込みスキップ（ローカルデータを使用）");
         }
     }
 
-    // 単語データ
+    // Googleスプレッドシートへ個人データを保存する
+    async function syncToGAS() {
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+        try {
+            const payload = {
+                username: getCurrentUser(),
+                userMap: getWordHistoryMap()
+            };
+            await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("クラウド自動保存エラー:", err);
+        }
+    }
+
+    // 全員ランキングの取得・表示
+    async function showRankingScreen() {
+        const listContainer = document.getElementById('ranking-list');
+        listContainer.innerHTML = '<p style="text-align:center;">データを集計中...</p>';
+        document.getElementById('ranking-screen').style.display = 'flex';
+
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) {
+            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">※GASのURLが未設定です。</p>';
+            return;
+        }
+
+        try {
+            const res = await fetch(GAS_WEB_APP_URL);
+            if (!res.ok) throw new Error("取得失敗");
+
+            const allData = await res.json();
+            const ranking = [];
+
+            Object.keys(allData).forEach(uName => {
+                const map = allData[uName];
+                let pts = 0;
+                wordsData.forEach(w => {
+                    pts += getWordCorrectPoints(map[w.english]);
+                });
+                const maxPts = wordsData.length * 11;
+                const rate = Math.min(100, Math.round((pts / maxPts) * 100));
+                ranking.push({ name: uName, rate: rate, pts: pts });
+            });
+
+            ranking.sort((a, b) => b.rate - a.rate || b.pts - a.pts);
+
+            listContainer.innerHTML = '';
+            if (ranking.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center;">まだ登録データがありません。</p>';
+                return;
+            }
+
+            ranking.forEach((r, idx) => {
+                const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
+                const div = document.createElement('div');
+                div.className = 'ranking-item';
+                div.innerHTML = `
+                    <div style="font-weight:bold; font-size:1.05rem;">${medal} ${r.name}</div>
+                    <div style="font-weight:bold; color:#c2410c;">${r.rate}% (${r.pts} pt)</div>
+                `;
+                listContainer.appendChild(div);
+            });
+        } catch (e) {
+            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">ランキングデータの読み込みに失敗しました。</p>';
+        }
+    }
+
+    function hideRankingScreen() {
+        document.getElementById('ranking-screen').style.display = 'none';
+    }
+
+    function getWordHistoryMap() {
+        const userKey = `vocab_map_${getCurrentUser()}`;
+        return JSON.parse(localStorage.getItem(userKey)) || {};
+    }
+
+    function saveWordHistoryMap(map) {
+        const userKey = `vocab_map_${getCurrentUser()}`;
+        localStorage.setItem(userKey, JSON.stringify(map));
+        syncToGAS();
+    }
+
+    async function initAppSession() {
+        const user = getCurrentUser();
+        document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
+        await syncFromGAS();
+        showModeSelect();
+    }
+
     const wordsData = [
 
     { test: "1-50", chapter: "1-10", number: 1, english: "agree", japanese: "賛成する", detail: "[自] ①賛成する ②（主語の中で）意見が一致する ③（with ～）（気候，食べ物が）（～に）合う" },
@@ -2839,16 +2964,11 @@
     let sessionWords = [];
     let currentSelectedQuizType = "ja_choice";
 
-    // モードごとの集計上限数 (和訳4, 英訳4, タイピング3 = 計11pt)
     const maxHistoryCounts = {
         ja_choice: 4,
         en_choice: 4,
         en_typing: 3
     };
-
-    function getWordHistoryMap() {
-        return JSON.parse(localStorage.getItem('vocab_word_history_map_v2')) || {};
-    }
 
     function recordWordResult(englishWord, type, isCorrect, userAns = "") {
         let map = getWordHistoryMap();
@@ -2863,16 +2983,14 @@
 
         map[englishWord][type].push(isCorrect);
         
-        // 直近の規定期限（4/4/3回）まで保持
         const limit = maxHistoryCounts[type] || 4;
         if (map[englishWord][type].length > limit) {
             map[englishWord][type] = map[englishWord][type].slice(-limit);
         }
         
-        localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(map));
+        saveWordHistoryMap(map);
     }
 
-    // 単語1つあたりの正解獲得ポイント（分子）を取得
     function getWordCorrectPoints(hObj) {
         if (!hObj) return 0;
         let points = 0;
@@ -2894,7 +3012,6 @@
         return points;
     }
 
-    // チャプターごとの達成率（全単語の正解ポイント合計 / (単語数 * 11)）
     function calcChapterAchievement(wordsInChapter) {
         if (!wordsInChapter || wordsInChapter.length === 0) return { rate: 0, learnedRatio: "未学習" };
         
@@ -2915,12 +3032,11 @@
 
         if (totalTestedWords === 0 && totalPoints === 0) return { rate: 0, learnedRatio: "未学習" };
 
-        const maxPossiblePoints = wordsInChapter.length * 11; // 1単語あたり11pt満点
+        const maxPossiblePoints = wordsInChapter.length * 11;
         const rate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
         return { rate: rate, learnedRatio: `${rate}%` };
     }
 
-    // 全体トータル達成率の計算
     function updateOverallStats() {
         if (wordsData.length === 0) return;
 
@@ -2934,7 +3050,7 @@
             }
         });
 
-        const maxPossiblePoints = wordsData.length * 11; // 全単語数 * 11pt
+        const maxPossiblePoints = wordsData.length * 11;
         const overallRate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
         document.getElementById('total-achievement-text').innerText = `${overallRate}%`;
 
@@ -2955,57 +3071,12 @@
         panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function exportHistoryData() {
-        const map = getWordHistoryMap();
-        if (Object.keys(map).length === 0) {
-            alert("バックアップする学習履歴データがありません。");
-            return;
+    function clearHistory() {
+        if (confirm(`"${getCurrentUser()}" さんの履歴を初期化しますか？`)) {
+            localStorage.removeItem(`vocab_map_${getCurrentUser()}`);
+            syncToGAS();
+            showHistoryScreen();
         }
-
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(map, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `mikan_seijin_backup_${new Date().toISOString().slice(0,10)}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-    }
-
-    function triggerImportFileInput() {
-        document.getElementById('import-file-input').click();
-    }
-
-    function importHistoryData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedMap = JSON.parse(e.target.result);
-                if (typeof importedMap !== 'object' || importedMap === null) {
-                    throw new Error("無効なファイル形式です。");
-                }
-
-                Object.keys(importedMap).forEach(w => {
-                    const item = importedMap[w];
-                    if (item && typeof item === 'object') {
-                        if (Array.isArray(item.ja_choice)) item.ja_choice = item.ja_choice.slice(-maxHistoryCounts.ja_choice);
-                        if (Array.isArray(item.en_choice)) item.en_choice = item.en_choice.slice(-maxHistoryCounts.en_choice);
-                        if (Array.isArray(item.en_typing)) item.en_typing = item.en_typing.slice(-maxHistoryCounts.en_typing);
-                    }
-                });
-
-                localStorage.setItem('vocab_word_history_map_v2', JSON.stringify(importedMap));
-                alert("学習履歴データの復元が完了しました！");
-                updateOverallStats();
-                showHistoryScreen();
-            } catch (err) {
-                alert("ファイルの読み込みに失敗しました。正しいJSONバックアップファイルを選択してください。");
-            }
-            event.target.value = '';
-        };
-        reader.readAsText(file);
     }
 
     let audioCtx = null;
@@ -3758,13 +3829,6 @@
         document.getElementById('word-detail-modal').style.display = 'none';
     }
 
-    function clearHistory() {
-        if (confirm("すべての単語の学習履歴および達成率データをクリアしますか？")) {
-            localStorage.removeItem('vocab_word_history_map_v2');
-            showHistoryScreen();
-        }
-    }
-
     function showDetailScreen() {
         getAudioContext();
         const listContainer = document.getElementById('detail-list');
@@ -3795,7 +3859,41 @@
         document.getElementById('detail-screen').style.display = 'none';
     }
 
-    showModeSelect();
+    const mikanSpeeches = [
+        "＼マダ ネナイノ？／", "＼アタラナケレバ ドウトイウコトハ ナイ／", "＼ボウヤ ダカラサ！／",
+        "＼ドッチナンダイ！／", "＼グーグルデ イインジャナイ？／", "＼ザクトハ チガウノダヨ。ザクトハ！／",
+        "＼ダガ コトワル！／", "＼キンキンニ ヒエテヤガルッ・・・！／", "＼ウチ ハ ウチ ヨソ ハ ヨソ／",
+        "＼ソシテ カガヤク ウルトラ ソウル／", "＼オナカ スイタワー／", "＼４０ビョウデ シタクシナ！／",
+        "＼ココロヲ モヤセ！／", "＼ミカン デス ケド ナニカ？／", "＼ワレワレハ ミカンセイジン ダ／",
+        "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
+        "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
+        "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
+        "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
+        "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
+        "＼アシタノ パン カワナ／", "＼ダッテ ニンゲン ダモノ／", "＼モウ ツキアッチャエヨ！！！／",
+        "＼サイゴマデ タッテイタ ヤツガ カツンダ／", "＼ワタシハ イマノ ハナシヲ シテイルンダヨ／",
+        "＼ゲンキ デスカ？／", "＼ライバル ハ ジブン／", "＼バルス！！／",
+        "＼イツカ キミニ ミセテアゲタイ／", "＼ニゲチャ ダメダ／",
+        "＼エライヒトニハ ワカランノデスヨ／", "＼ソコニ シビレル！ アコガレルゥ！／", "＼ミカン パワー ゼンカイ／", "＼３フンダケ マッテヤル／"
+    ];
+
+    function changeMikanSpeech() {
+        const textElement = document.getElementById('mikan-speech');
+        if (textElement && mikanSpeeches.length > 0) {
+            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
+        }
+    }
+
+    function changeResultMikanSpeech() {
+        const textElement = document.getElementById('result-mikan-speech');
+        if (textElement && mikanSpeeches.length > 0) {
+            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
+        }
+    }
+
+    initAppSession();
 </script>
 
 </body>
