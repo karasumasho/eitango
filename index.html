@@ -352,7 +352,8 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            margin-top: 8px;
+            margin-top: 12px;
+            margin-bottom: 10px;
             flex-shrink: 0;
         }
         .mikan-speech-text {
@@ -372,7 +373,7 @@
     </div>
 
     <!-- ① モード選択画面 -->
-    <div id="mode-screen" class="screen active">
+    <div id="mode-screen" class="screen active scroll-container">
         <div id="current-user-display" style="text-align: center; font-size: 0.85rem; color: #9a3412; margin-bottom: 4px; font-weight: bold;"></div>
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
@@ -389,6 +390,7 @@
             <div class="mikan-container">
                 <div class="mikan-speech-text" id="mikan-speech">＼マダ ネナイノ？／</div>
                 <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
+                <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
         </div>
     </div>
@@ -480,7 +482,7 @@
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
         <div class="data-management-panel" id="data-management-panel">
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #059669;" onclick="forceSyncLocalToGAS()">🔄 スマホ内のデータをクラウドに送信</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #d97706;" onclick="forceUploadOldData()">📥 スマホ内のデータをクラウドへ強制上書き送信</button>
             <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #0284c7;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
             <button class="btn danger-btn" onclick="clearHistory()">⚠️ 現在のユーザーの履歴を初期化</button>
         </div>
@@ -516,7 +518,6 @@
 </div>
 
 <script>
-    // --- ★ Google Apps Script (GAS) のウェブアプリURL設定完了 ---
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec";
 
     function getCurrentUser() {
@@ -538,16 +539,23 @@
         }
     }
 
-    function forceSyncLocalToGAS() {
+    function forceUploadOldData() {
         const user = getCurrentUser();
+        const oldData = localStorage.getItem('vocab_map');
+        if (oldData) {
+            localStorage.setItem(`vocab_map_${user}`, oldData);
+        }
+        
         const localData = localStorage.getItem(`vocab_map_${user}`);
         if (!localData) {
-            alert(`"${user}" のデータがスマホ内に見つかりませんでした。`);
+            alert("スマホ内に送信するデータが見つかりませんでした。");
             return;
         }
-        if (confirm(`"${user}" のスマホ内にあるデータをGoogleスプレッドシートに送信して復旧しますか？`)) {
+
+        if (confirm(`"${user}" のスマホ内にあるデータをGoogleスプレッドシートに強制送信し、クラウド側を上書きしますか？`)) {
             syncToGAS();
-            alert("クラウドへの送信を実行しました！ランキング画面や履歴を再度ご確認ください。");
+            alert("クラウドへの強制上書き送信を実行しました！ランキングや履歴を再度ご確認ください。");
+            location.reload();
         }
     }
 
@@ -558,7 +566,7 @@
             if (res.ok) {
                 const allData = await res.json();
                 const user = getCurrentUser();
-                if (allData[user]) {
+                if (allData[user] && !localStorage.getItem(`vocab_map_${user}`)) {
                     localStorage.setItem(`vocab_map_${user}`, JSON.stringify(allData[user]));
                 }
             }
@@ -655,12 +663,10 @@
         const user = getCurrentUser();
         document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
 
-        // 旧バージョンデータの自動救出（未命名キーがあれば現在のユーザーに引き継ぐ）
         const oldData = localStorage.getItem('vocab_map');
         const currentUserKey = `vocab_map_${user}`;
         if (oldData && !localStorage.getItem(currentUserKey)) {
             localStorage.setItem(currentUserKey, oldData);
-            console.log("旧バージョンのデータを引き継ぎました");
         }
 
         await syncFromGAS();
