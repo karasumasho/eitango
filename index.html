@@ -12,7 +12,7 @@
             padding: 20px 10px;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* トップページの全体スクロールに対応するため上に配置 */
+            align-items: flex-start;
             min-height: 100vh;
             box-sizing: border-box;
         }
@@ -27,11 +27,9 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            /* デフォルト（クイズ画面等）：アプリ風の固定ウィンドウ＋内部スクロール */
             height: 85vh;
             overflow: hidden;
         }
-        /* トップページ表示時のみ、高さを自動にしてページ全体でスクロールさせる */
         .container.home-mode {
             height: auto;
             overflow: visible;
@@ -143,6 +141,20 @@
         }
         .danger-btn:hover {
             background: #dc2626;
+        }
+        .mini-register-btn {
+            background: #f97316;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .mini-register-btn:hover {
+            background: #ea580c;
         }
         .progress {
             font-size: 0.9rem;
@@ -368,6 +380,65 @@
             color: #7c2d12;
             text-align: center;
         }
+
+        /* カスタムダイアログ（モーダル）用 */
+        .custom-dialog-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .custom-dialog-box {
+            background: #fff7ed;
+            border: 2px solid #fed7aa;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+        .custom-dialog-msg {
+            color: #7c2d12;
+            font-weight: bold;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            white-space: pre-wrap;
+        }
+        .custom-dialog-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #fed7aa;
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 14px;
+            outline: none;
+        }
+        .custom-dialog-input:focus {
+            border-color: #f97316;
+        }
+        .custom-dialog-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .custom-dialog-btns .btn {
+            width: 46%;
+            margin-bottom: 0;
+            padding: 10px 4px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -380,7 +451,15 @@
 
     <!-- ① モード選択画面 -->
     <div id="mode-screen" class="screen active scroll-container">
-        <div id="current-user-display" style="text-align: center; font-size: 0.85rem; color: #9a3412; margin-bottom: 4px; font-weight: bold;"></div>
+        <!-- ログイン中表示（中央）と新規ID登録ボタン（右端）のレイアウト -->
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 6px; width: 100%;">
+            <div></div>
+            <span id="current-user-display" style="font-size: 0.85rem; color: #9a3412; font-weight: bold; text-align: center;"></span>
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="mini-register-btn" onclick="openNewIdRegistration()">＋ 新規ID登録</button>
+            </div>
+        </div>
+
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
@@ -490,10 +569,11 @@
         <!-- データ管理パネル -->
         <div class="data-management-panel" id="data-management-panel">
             <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importDataFromFile(event)">
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #059669;" onclick="document.getElementById('import-file-input').click()">📥 ローカルファイル（JSON）で上書き復元</button>
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #0284c7;" onclick="exportDataToFile()">📤 現在のデータをファイルに保存</button>
-            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 6px; background-color: #475569;" onclick="switchUserPrompt()">👤 名前（ID）の切り替え</button>
-            <button class="btn danger-btn" onclick="clearHistory()">⚠️ 現在のユーザーの履歴を初期化</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 4px; background-color: #059669;" onclick="document.getElementById('import-file-input').click()">📥 ローカルファイル（JSON）で復元</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 4px; background-color: #0284c7;" onclick="exportDataToFile()">📤 現在のデータをローカルファイル（JSON)で保存</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 4px; background-color: #d97706;" onclick="changeUserIdFlow()">✏️ 名前（ID名）の変更</button>
+            <button class="btn primary-btn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 4px; background-color: #475569;" onclick="switchUserIdFlow()">🔄 名前（ID名）の切り替え</button>
+            <button class="btn danger-btn" style="margin-top: 2px;" onclick="deleteCurrentUserDataFlow()">🗑️ 現在の名前（ID）データの削除</button>
         </div>
 
         <button class="btn" style="background-color: #475569; color: white; margin-bottom: 4px; padding: 10px;" onclick="toggleDataManagementPanel()">⚙️ データ管理</button>
@@ -526,124 +606,148 @@
     </div>
 </div>
 
+<!-- 汎用カスタムダイアログ（入力・確認・保存場所通知用） -->
+<div id="custom-dialog" class="custom-dialog-backdrop">
+    <div class="custom-dialog-box">
+        <div id="custom-dialog-msg" class="custom-dialog-msg"></div>
+        <input type="text" id="custom-dialog-input" class="custom-dialog-input" style="display: none;">
+        <div id="custom-dialog-btns" class="custom-dialog-btns"></div>
+    </div>
+</div>
+
 <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec";
+    const DEFAULT_GUEST_ID = "チキュウジン1";
 
+    // --- カスタムダイアログ制御ヘルパー ---
+    function showCustomAlert(message) {
+        return new Promise(resolve => {
+            const backdrop = document.getElementById('custom-dialog');
+            const msgEl = document.getElementById('custom-dialog-msg');
+            const inputEl = document.getElementById('custom-dialog-input');
+            const btnsEl = document.getElementById('custom-dialog-btns');
+
+            msgEl.innerText = message;
+            inputEl.style.display = 'none';
+            btnsEl.innerHTML = `<button class="btn primary-btn" id="cd-ok">OK</button>`;
+            backdrop.style.display = 'flex';
+
+            document.getElementById('cd-ok').onclick = () => {
+                backdrop.style.display = 'none';
+                resolve();
+            };
+        });
+    }
+
+    function showCustomConfirmYesNo(message) {
+        return new Promise(resolve => {
+            const backdrop = document.getElementById('custom-dialog');
+            const msgEl = document.getElementById('custom-dialog-msg');
+            const inputEl = document.getElementById('custom-dialog-input');
+            const btnsEl = document.getElementById('custom-dialog-btns');
+
+            msgEl.innerText = message;
+            inputEl.style.display = 'none';
+            btnsEl.innerHTML = `
+                <button class="btn danger-btn" id="cd-yes" style="margin-top:0;">ハイ</button>
+                <button class="btn back-btn" id="cd-no" style="margin-top:0;">イイエ</button>
+            `;
+            backdrop.style.display = 'flex';
+
+            document.getElementById('cd-yes').onclick = () => {
+                backdrop.style.display = 'none';
+                resolve(true);
+            };
+            document.getElementById('cd-no').onclick = () => {
+                backdrop.style.display = 'none';
+                resolve(false);
+            };
+        });
+    }
+
+    function showCustomPrompt(message, defaultValue = "", allowCancel = true) {
+        return new Promise(resolve => {
+            const backdrop = document.getElementById('custom-dialog');
+            const msgEl = document.getElementById('custom-dialog-msg');
+            const inputEl = document.getElementById('custom-dialog-input');
+            const btnsEl = document.getElementById('custom-dialog-btns');
+
+            msgEl.innerText = message;
+            inputEl.style.display = 'block';
+            inputEl.value = defaultValue;
+            
+            if (allowCancel) {
+                btnsEl.innerHTML = `
+                    <button class="btn primary-btn" id="cd-submit">ケッテイ</button>
+                    <button class="btn back-btn" id="cd-cancel" style="margin-top:0;">キャンセル</button>
+                `;
+            } else {
+                btnsEl.innerHTML = `<button class="btn primary-btn" id="cd-submit">ケッテイ</button>`;
+            }
+            
+            backdrop.style.display = 'flex';
+            setTimeout(() => inputEl.focus(), 50);
+
+            document.getElementById('cd-submit').onclick = () => {
+                const val = inputEl.value.trim();
+                backdrop.style.display = 'none';
+                resolve(val);
+            };
+            if (allowCancel) {
+                document.getElementById('cd-cancel').onclick = () => {
+                    backdrop.style.display = 'none';
+                    resolve(null);
+                };
+            }
+        });
+    }
+
+    // --- ユーザーID取得・初回起動時設定 ---
     function getCurrentUser() {
+        return (localStorage.getItem('vocab_current_user') || DEFAULT_GUEST_ID).trim();
+    }
+
+    async function ensureInitialUser() {
         let user = localStorage.getItem('vocab_current_user');
         if (!user) {
-            user = prompt("ようこそ！あなたの名前（ID）を入力してください:", "ゲスト");
-            if (!user || !user.trim()) user = "ゲスト";
-            localStorage.setItem('vocab_current_user', user.trim());
+            const input = await showCustomPrompt(
+                "ナマエヲ イレテクダサイ。\nナマエヲ 入レルト 他デバイス デモ 使エマス。",
+                DEFAULT_GUEST_ID,
+                false
+            );
+            user = (input && input.trim()) ? input.trim() : DEFAULT_GUEST_ID;
+            localStorage.setItem('vocab_current_user', user);
         }
-        return user.trim();
+        return user;
     }
 
-    function switchUserPrompt() {
-        const newUser = prompt("切替後の名前（ID）を入力してください:", getCurrentUser());
-        if (newUser && newUser.trim()) {
-            localStorage.setItem('vocab_current_user', newUser.trim());
-            alert(`"${newUser.trim()}" さんに切り替えました。クラウドから成績を取得します。`);
-            initAppSession();
-        }
-    }
-
-    // --- ローカルファイル（JSON）からデータを読み込んで上書き復元 ---
-    function importDataFromFile(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedData = JSON.parse(e.target.result);
-                const user = getCurrentUser();
-                
-                if (confirm(`選択したファイルから "${user}" のデータを上書き復元しますか？`)) {
-                    localStorage.setItem(`vocab_map_${user}`, JSON.stringify(importedData));
-                    syncToGAS();
-                    alert("データの復元（上書き）に成功しました！");
-                    location.reload();
-                }
-            } catch (err) {
-                alert("ファイルの読み込みに失敗しました。正しいJSONファイルを選択してください。");
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    // --- 現在のデータをファイルとしてダウンロード保存 ---
-    function exportDataToFile() {
-        const user = getCurrentUser();
-        const data = localStorage.getItem(`vocab_map_${user}`);
-        if (!data) {
-            alert("保存するデータがありません。");
-            return;
-        }
-
-        const blob = new Blob([data], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mikan_seijin_backup_${user}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    // --- 【強力な自動救済＆保護ロジック】 ---
-    async function initAppSession() {
-        const user = getCurrentUser();
-        document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
-
-        const currentUserKey = `vocab_map_${user}`;
-        const currentLocalData = localStorage.getItem(currentUserKey);
-
-        // 1. 旧バージョンの共通キー 'vocab_map' が残っていれば、現在のユーザーデータに自動移行
-        const oldCommonData = localStorage.getItem('vocab_map');
-        if (oldCommonData && (!currentLocalData || currentLocalData === "{}")) {
-            localStorage.setItem(currentUserKey, oldCommonData);
-        }
-
-        // 2. もし 'vocab_map_ゲスト' など他の古いキーにデータがあれば自動移行
-        if (!localStorage.getItem(currentUserKey) || localStorage.getItem(currentUserKey) === "{}") {
-            const guestData = localStorage.getItem('vocab_map_ゲスト');
-            if (guestData && guestData !== "{}") {
-                localStorage.setItem(currentUserKey, guestData);
-            }
-        }
-
-        // 3. クラウドからの自動読み込み（ローカルが空の場合のみ、誤上書きを防いで安全に取得）
-        await syncFromGAS();
-        showModeSelect();
-    }
-
-    async function syncFromGAS() {
-        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+    // --- クラウドの全データ取得ヘルパー ---
+    async function fetchAllGASData() {
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return {};
         try {
             const res = await fetch(GAS_WEB_APP_URL);
             if (res.ok) {
-                const allData = await res.json();
-                const user = getCurrentUser();
-                const currentLocal = localStorage.getItem(`vocab_map_${user}`);
-                
-                // ローカルにデータが無い場合のみ、クラウドのバックアップを自動適用
-                if (allData[user] && (!currentLocal || currentLocal === "{}")) {
-                    localStorage.setItem(`vocab_map_${user}`, JSON.stringify(allData[user]));
-                }
+                return await res.json();
             }
         } catch (err) {
-            console.log("クラウドデータの読み込みスキップ（ローカルデータを使用）");
+            console.error("クラウド取得エラー:", err);
         }
+        return {};
     }
 
-    async function syncToGAS() {
+    // --- クラウドへ保存（チキュウジン1の場合はアップロードしない） ---
+    async function syncToGAS(targetUser = null, targetMap = null) {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+        const user = targetUser || getCurrentUser();
+        
+        if (user === DEFAULT_GUEST_ID) return;
+
+        const mapToSave = targetMap !== null ? targetMap : getWordHistoryMap();
         try {
             const payload = {
-                username: getCurrentUser(),
-                userMap: getWordHistoryMap()
+                action: "save",
+                username: user,
+                userMap: mapToSave
             };
             await fetch(GAS_WEB_APP_URL, {
                 method: "POST",
@@ -656,24 +760,221 @@
         }
     }
 
+    // --- クラウドから特定IDのデータを削除 ---
+    async function deleteFromGAS(targetUser) {
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+        if (!targetUser || targetUser === DEFAULT_GUEST_ID) return;
+        try {
+            const payload = {
+                action: "delete",
+                username: targetUser
+            };
+            await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("クラウド削除エラー:", err);
+        }
+    }
+
+    // --- (3) トップページ：新規ID登録 ---
+    async function openNewIdRegistration() {
+        const allData = await fetchAllGASData();
+
+        while (true) {
+            const newName = await showCustomPrompt("ナマエヲ イレテクダサイ", "", true);
+            if (newName === null) return;
+            if (!newName) continue;
+
+            const existsInCloud = Object.prototype.hasOwnProperty.call(allData, newName);
+            const existsInLocal = localStorage.getItem(`vocab_map_${newName}`) !== null;
+
+            if (newName === DEFAULT_GUEST_ID || existsInCloud || existsInLocal) {
+                await showCustomAlert("ソノ ナマエ ハ スデ ニ 使ワレテイル");
+                continue;
+            }
+
+            const currentUser = getCurrentUser();
+            let initialMap = {};
+            if (currentUser === DEFAULT_GUEST_ID) {
+                initialMap = getWordHistoryMap();
+            }
+
+            localStorage.setItem('vocab_current_user', newName);
+            localStorage.setItem(`vocab_map_${newName}`, JSON.stringify(initialMap));
+            await syncToGAS(newName, initialMap);
+
+            document.getElementById('current-user-display').innerText = `ログイン中: ${newName}`;
+            updateOverallStats();
+            await showCustomAlert(`「${newName}」ヲ トウロクシタ！`);
+            break;
+        }
+    }
+
+    // --- (1) データ管理①：ローカルファイル（JSON）で復元 ---
+    function importDataFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                const user = getCurrentUser();
+                localStorage.setItem(`vocab_map_${user}`, JSON.stringify(importedData));
+                await syncToGAS(user, importedData);
+                await showCustomAlert(`「${user}」ノ データ ヲ フクゲンシタ！`);
+                location.reload();
+            } catch (err) {
+                await showCustomAlert("ファイルノ 読ミ込ミ ニ 失敗シタ。正シイ JSON ファイル ヲ 選択シテクダサイ。");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = "";
+    }
+
+    // --- (1) データ管理②：現在のデータをローカルファイル（JSON)で保存 ---
+    async function exportDataToFile() {
+        const user = getCurrentUser();
+        const data = localStorage.getItem(`vocab_map_${user}`) || "{}";
+        const fileName = `mikan_seijin_backup_${user}.json`;
+
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const ua = navigator.userAgent;
+        let locationMsg = `ダウンロード フォルダ（${fileName}）`;
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            locationMsg = `「ファイル」アプリ ＞ ダウンロード フォルダ（${fileName}）`;
+        } else if (/Android/i.test(ua)) {
+            locationMsg = `「Files（ファイル）」アプリ ＞ ダウンロード（${fileName}）`;
+        }
+        await showCustomAlert(`${locationMsg} ニ\nホゾンシタ。`);
+    }
+
+    // --- (1) データ管理③：名前（ID名）の変更 ---
+    async function changeUserIdFlow() {
+        const oldUser = getCurrentUser();
+        const allData = await fetchAllGASData();
+
+        while (true) {
+            const newName = await showCustomPrompt("新シイ 名前（ID名）ヲ 入力シテクダサイ:", oldUser, true);
+            if (newName === null) return;
+            if (!newName || newName === oldUser) return;
+
+            const existsInCloud = Object.prototype.hasOwnProperty.call(allData, newName);
+            const existsInLocal = localStorage.getItem(`vocab_map_${newName}`) !== null;
+
+            if (newName === DEFAULT_GUEST_ID || existsInCloud || existsInLocal) {
+                await showCustomAlert("ソノ 名前 ハ 既 ニ 使ワレテイル。");
+                continue;
+            }
+
+            const currentData = getWordHistoryMap();
+            localStorage.setItem(`vocab_map_${newName}`, JSON.stringify(currentData));
+            localStorage.removeItem(`vocab_map_${oldUser}`);
+            localStorage.setItem('vocab_current_user', newName);
+
+            await syncToGAS(newName, currentData);
+            if (oldUser !== DEFAULT_GUEST_ID) {
+                await deleteFromGAS(oldUser);
+            }
+
+            document.getElementById('current-user-display').innerText = `ログイン中: ${newName}`;
+            await showCustomAlert(`ID名 ヲ「${newName}」ニ 変更シタ。`);
+            break;
+        }
+    }
+
+    // --- (1) データ管理④：名前（ID名）の切り替え ---
+    async function switchUserIdFlow() {
+        const targetName = await showCustomPrompt("切替エル 名前（ID名）ヲ 入力シテクダサイ:", "", true);
+        if (targetName === null || !targetName) return;
+
+        const allData = await fetchAllGASData();
+        const existsInCloud = Object.prototype.hasOwnProperty.call(allData, targetName);
+
+        if (!existsInCloud) {
+            await showCustomAlert("ソノ 名前 ハ ナイ。");
+            return;
+        }
+
+        localStorage.setItem('vocab_current_user', targetName);
+        localStorage.setItem(`vocab_map_${targetName}`, JSON.stringify(allData[targetName]));
+        document.getElementById('current-user-display').innerText = `ログイン中: ${targetName}`;
+        updateOverallStats();
+        hideHistoryScreen();
+        showModeSelect();
+        await showCustomAlert(`「${targetName}」ニ 切替エタ。`);
+    }
+
+    // --- (1) データ管理⑤：現在の名前（ID）データの削除 ---
+    async function deleteCurrentUserDataFlow() {
+        const confirmed = await showCustomConfirmYesNo("ホントウ ニ ケス ノ カ？");
+        if (!confirmed) return;
+
+        const user = getCurrentUser();
+        localStorage.removeItem(`vocab_map_${user}`);
+        await deleteFromGAS(user);
+
+        localStorage.setItem('vocab_current_user', DEFAULT_GUEST_ID);
+        document.getElementById('current-user-display').innerText = `ログイン中: ${DEFAULT_GUEST_ID}`;
+        updateOverallStats();
+        hideHistoryScreen();
+        showModeSelect();
+        await showCustomAlert("データ ヲ 削除シタ。");
+    }
+
+    // --- 起動時セッション初期化（旧データ自動救済含む） ---
+    async function initAppSession() {
+        const user = await ensureInitialUser();
+        document.getElementById('current-user-display').innerText = `ログイン中: ${user}`;
+
+        const currentUserKey = `vocab_map_${user}`;
+        const currentLocalData = localStorage.getItem(currentUserKey);
+
+        const oldCommonData = localStorage.getItem('vocab_map');
+        if (oldCommonData && (!currentLocalData || currentLocalData === "{}")) {
+            localStorage.setItem(currentUserKey, oldCommonData);
+        }
+
+        if (user !== DEFAULT_GUEST_ID) {
+            const allData = await fetchAllGASData();
+            const latestLocal = localStorage.getItem(currentUserKey);
+            if (allData[user] && (!latestLocal || latestLocal === "{}")) {
+                localStorage.setItem(currentUserKey, JSON.stringify(allData[user]));
+            }
+        }
+
+        showModeSelect();
+    }
+
     async function showRankingScreen() {
         const listContainer = document.getElementById('ranking-list');
-        listContainer.innerHTML = '<p style="text-align:center;">データを集計中...</p>';
+        listContainer.innerHTML = '<p style="text-align:center;">データ ヲ 集計中...</p>';
         document.getElementById('ranking-screen').style.display = 'flex';
 
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) {
-            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">※GASのURLが未設定です。</p>';
+            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">※GAS の URL ガ 未設定デス。</p>';
             return;
         }
 
         try {
-            const res = await fetch(GAS_WEB_APP_URL);
-            if (!res.ok) throw new Error("取得失敗");
-
-            const allData = await res.json();
+            const allData = await fetchAllGASData();
             const ranking = [];
 
             Object.keys(allData).forEach(uName => {
+                if (uName === DEFAULT_GUEST_ID) return;
                 const map = allData[uName];
                 let pts = 0;
                 wordsData.forEach(w => {
@@ -688,7 +989,7 @@
 
             listContainer.innerHTML = '';
             if (ranking.length === 0) {
-                listContainer.innerHTML = '<p style="text-align:center;">まだ登録データがありません。</p>';
+                listContainer.innerHTML = '<p style="text-align:center;">マダ 登録データ ガ アリマセン。</p>';
                 return;
             }
 
@@ -703,7 +1004,7 @@
                 listContainer.appendChild(div);
             });
         } catch (e) {
-            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">ランキングデータの読み込みに失敗しました。</p>';
+            listContainer.innerHTML = '<p style="text-align:center; color:#dc2626;">ランキング データ ノ 読ミ込ミ ニ 失敗シタ。</p>';
         }
     }
 
@@ -3145,14 +3446,6 @@
         panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function clearHistory() {
-        if (confirm(`"${getCurrentUser()}" さんの履歴を初期化しますか？`)) {
-            localStorage.removeItem(`vocab_map_${getCurrentUser()}`);
-            syncToGAS();
-            showHistoryScreen();
-        }
-    }
-
     let audioCtx = null;
 
     function getAudioContext() {
@@ -3299,7 +3592,6 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
 
-        // トップページ（mode-screen）の時だけコンテナの固定高さを解除してページ全体スクロールにする
         const container = document.querySelector('.container');
         if (screenId === 'mode-screen') {
             container.classList.add('home-mode');
@@ -3328,6 +3620,7 @@
     }
 
     function showModeSelect() {
+        document.getElementById('current-user-display').innerText = `ログイン中: ${getCurrentUser()}`;
         updateOverallStats();
         switchScreen('mode-screen');
     }
@@ -3473,8 +3766,9 @@
         showQuestion();
     }
 
-    function confirmQuitQuiz() {
-        if (confirm("テストを中断してメニューに戻りますか？")) {
+    async function confirmQuitQuiz() {
+        const ok = await showCustomConfirmYesNo("テストヲ 中断シテ メニュー ニ 戻リマスカ？");
+        if (ok) {
             if (currentMode === 'learn') {
                 showLearnMenu(currentChapterOrRange);
             } else {
@@ -3950,7 +4244,7 @@
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
         "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
         "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ 마エヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
