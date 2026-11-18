@@ -121,6 +121,17 @@
         .ranking-btn:hover {
             background: #b45309;
         }
+        .timeattack-main-btn {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            font-weight: bold;
+            font-size: 1.05rem;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+        }
+        .timeattack-main-btn:hover {
+            background: linear-gradient(135deg, #c2410c, #b91c1c);
+        }
         .back-btn {
             background: #ffedd5;
             color: #9a3412;
@@ -156,11 +167,13 @@
         .mini-register-btn:hover {
             background: #ea580c;
         }
-        .progress {
+        .progress-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 0.9rem;
             color: #9a3412;
             margin-bottom: 6px;
-            text-align: center;
             flex-shrink: 0;
         }
         .quiz-type-badge {
@@ -346,11 +359,17 @@
             background: #ffffff;
             border: 1px solid #fed7aa;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 0.9rem;
+        }
+        .ranking-item.highlight-user {
+            background: #fef08a !important;
+            border: 2px solid #eab308 !important;
+            font-weight: bold;
         }
 
         .data-management-panel {
@@ -451,7 +470,7 @@
 
     <!-- ① モード選択画面 -->
     <div id="mode-screen" class="screen active scroll-container">
-        <!-- ログイン中表示（中央）と、その1行下に小さめ新規ID登録ボタン（右端） -->
+        <!-- ログイン中表示（中央）と新規ID登録ボタン（右端） -->
         <div style="margin-bottom: 6px; width: 100%;">
             <div style="text-align: center;">
                 <span id="current-user-display" style="font-size: 0.85rem; color: #9a3412; font-weight: bold;"></span>
@@ -465,7 +484,7 @@
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem; background-color: #059669;" onclick="selectMode('test')">🎯 総合テスト (20問ミックス)</button>
-            <button class="btn ranking-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showRankingScreen()">🏆 全員ランキング・スコアボード</button>
+            <button class="btn ranking-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showRankingScreen()">🏆 達成率ランキング</button>
             <button class="btn history-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showHistoryScreen()">📊 単語別アチーブメント・履歴</button>
             
             <div class="total-stats-card">
@@ -474,10 +493,12 @@
             </div>
 
             <div class="mikan-container">
-                <div class="mikan-speech-text" id="mikan-speech">＼マダ ネナイノ？／</div>
+                <div class="mikan-speech-text" id="home-mikan-speech">＼読込中...／</div>
                 <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
                 <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
+
+            <button class="btn timeattack-main-btn" style="padding: 14px; margin-top: 6px;" onclick="openTimeAttackLobby()" id="timeattack-lobby-btn">⚡ 注目チャプター タイムアタック！</button>
         </div>
     </div>
 
@@ -486,6 +507,24 @@
         <p id="chapter-instruction" style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem; flex-shrink: 0;"></p>
         <div class="scroll-container" id="chapter-list"></div>
         <button class="btn back-btn" id="chapter-back-btn" onclick="showModeSelect()">モード選択に戻る</button>
+    </div>
+
+    <!-- ②-1b テスト前プレビュー（スタート＆上位5位ランキング表示）画面 -->
+    <div id="test-preview-screen" class="screen">
+        <h2 id="preview-title" style="color: #7c2d12; text-align: center; margin-bottom: 4px; font-size: 1.2rem;">テスト範囲</h2>
+        <p style="text-align: center; color: #9a3412; font-size: 0.85rem; margin-bottom: 10px;">ハイスコアを目指してタイムアタック！</p>
+        
+        <div style="background: #ffedd5; border: 2px solid #fed7aa; border-radius: 12px; padding: 12px; margin-bottom: 10px; flex-shrink: 0;">
+            <div style="font-size: 0.85rem; font-weight: bold; color: #c2410c; margin-bottom: 6px; text-align: center;">👑 チャプターランキング 上位5位</div>
+            <div id="preview-ranking-list">
+                <p style="text-align: center; font-size: 0.85rem; color: #64748b;">読み込み中...</p>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
+            <button class="btn primary-btn" style="padding: 16px; font-size: 1.1rem; background-color: #059669;" onclick="startActualTest()">🚀 スタート！</button>
+            <button class="btn back-btn" onclick="backFromTestPreview()">もどる</button>
+        </div>
     </div>
 
     <!-- ②-2 学習モード専用：回答形式の選択メニュー -->
@@ -503,7 +542,10 @@
 
     <!-- ③ クイズ画面 -->
     <div id="quiz-screen" class="screen">
-        <div class="progress" id="progress"></div>
+        <div class="progress-container">
+            <span id="progress">第 1 問 / 全 20 問</span>
+            <span id="live-timer" style="font-weight: bold; color: #c2410c; font-family: monospace;">⏱️ 00:00.0</span>
+        </div>
         <div class="quiz-type-badge" id="quiz-type-badge"></div>
         <div class="feedback-banner" id="feedback-banner"></div>
         
@@ -526,15 +568,25 @@
     <div id="result-screen" class="screen">
         <h2 style="color: #7c2d12; margin-bottom: 0px;">テスト終了！</h2>
         
-        <div class="mikan-container" style="margin-top: 16px; margin-bottom: 16px;">
+        <div class="mikan-container" style="margin-top: 10px; margin-bottom: 10px;">
             <div class="mikan-speech-text" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
-            <img src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 115px; height: 115px; object-fit: contain;">
+            <img src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 100px; height: 100px; object-fit: contain;">
         </div>
 
-        <div class="result-box" id="score-text" style="margin-top: 0; margin-bottom: 8px;"></div>
+        <div class="result-box" id="score-text" style="margin-top: 0; margin-bottom: 4px;"></div>
+        <div id="result-time-text" style="text-align: center; font-weight: bold; color: #d97706; font-size: 1.05rem; margin-bottom: 8px; font-family: monospace;"></div>
         
         <div class="scroll-container" id="result-scroll-container">
             <button class="btn primary-btn" id="retry-same-btn" onclick="retryCurrentTest()" style="background-color: #059669; margin-bottom: 6px;">🔄 もう一度テストする</button>
+            
+            <!-- タイムアタック（総合テスト）結果直下のランキング表示エリア -->
+            <div id="result-ranking-box" style="display: none; background: #ffedd5; border: 2px solid #fed7aa; border-radius: 12px; padding: 10px; margin-bottom: 8px;">
+                <div style="font-size: 0.8rem; font-weight: bold; color: #c2410c; margin-bottom: 4px; text-align: center;">👑 今回のチャプターランキング (上位5位)</div>
+                <div id="result-ranking-list">
+                    <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
+                </div>
+            </div>
+
             <button class="btn primary-btn" id="retry-mistakes-btn" style="display:none; margin-bottom: 6px;" onclick="startRetryMistakes()">間違えた問題だけ再テスト</button>
             <button class="btn secondary-btn" onclick="showDetailScreen()" style="margin-bottom: 6px;">📖 今回の単語を見る</button>
             
@@ -589,10 +641,10 @@
         <button class="btn primary-btn" onclick="hideHistoryGroupScreen()">戻る</button>
     </div>
 
-    <!-- ⑧ 全員ランキング画面 (独立オーバーレイ) -->
+    <!-- ⑧ 達成率ランキング画面 (独立オーバーレイ) -->
     <div id="ranking-screen" class="overlay-screen">
-        <h2 style="color: #7c2d12;">🏆 全員ランキングボード</h2>
-        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">全プレイヤーの達成率リアルタイム順位</p>
+        <h2 style="color: #7c2d12;">🏆 達成率ランキング</h2>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">全プレイヤーのトータル達成率リアルタイム順位</p>
         <div class="scroll-container" id="ranking-list" style="margin-bottom: 10px;"></div>
         <button class="btn primary-btn" onclick="hideRankingScreen()">戻る</button>
     </div>
@@ -619,8 +671,43 @@
 <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwe0n48291Ot7hSTrsXlZfnPzTMbTXxnJ-rETAol95dJl82ky9gIk_ayhb-pxboUzLF/exec";
     const DEFAULT_GUEST_ID = "ゲスト";
+    
+    let featuredTimeAttackRange = "1-50";
 
-    // --- カスタムダイアログ制御ヘルパー ---
+    let testStartTime = 0;
+    let testElapsedSeconds = 0;
+    let timerInterval = null;
+    let lastTestRecord = null; // 今回のテスト成績（ハイライト判定用）
+
+    function formatStopwatchTime(totalSeconds) {
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = Math.floor(totalSeconds % 60);
+        const tenths = Math.floor((totalSeconds * 10) % 10);
+        const mStr = String(mins).padStart(2, '0');
+        const sStr = String(secs).padStart(2, '0');
+        return `${mStr}:${sStr}.${tenths}`;
+    }
+
+    function startLiveTimer() {
+        stopLiveTimer();
+        testStartTime = Date.now();
+        const timerEl = document.getElementById('live-timer');
+        
+        timerInterval = setInterval(() => {
+            const currentSec = (Date.now() - testStartTime) / 1000;
+            if (timerEl) {
+                timerEl.innerText = `⏱️ ${formatStopwatchTime(currentSec)}`;
+            }
+        }, 100);
+    }
+
+    function stopLiveTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
     function showCustomAlert(message) {
         return new Promise(resolve => {
             const backdrop = document.getElementById('custom-dialog');
@@ -703,7 +790,6 @@
         });
     }
 
-    // --- ユーザーID取得・初回起動時設定 ---
     function getCurrentUser() {
         return (localStorage.getItem('vocab_current_user') || DEFAULT_GUEST_ID).trim();
     }
@@ -713,14 +799,11 @@
         if (!user) {
             user = DEFAULT_GUEST_ID;
             localStorage.setItem('vocab_current_user', user);
-            
-            // 初回起動時のみポップアップ表示
             await showCustomAlert("新規ID登録するとデータのクラウド保存、ランキングに参加できます！");
         }
         return user;
     }
 
-    // --- クラウドの全データ取得ヘルパー ---
     async function fetchAllGASData() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return {};
         try {
@@ -734,11 +817,107 @@
         return {};
     }
 
-    // --- クラウドへ保存（ゲストの場合はアップロードしない） ---
+    async function fetchAppSettings() {
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+        try {
+            const res = await fetch(`${GAS_WEB_APP_URL}?action=getSettings`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.notice) {
+                    const el = document.getElementById('home-mikan-speech');
+                    if (el) el.innerText = `＼${data.notice}／`;
+                }
+                if (data && data.timeAttackRange) {
+                    featuredTimeAttackRange = data.timeAttackRange;
+                    const btnEl = document.getElementById('timeattack-lobby-btn');
+                    if (btnEl) btnEl.innerText = `⚡ 注目チャプター タイムアタック！ (範囲 ${featuredTimeAttackRange})`;
+                }
+            }
+        } catch (err) {
+            console.error("設定取得エラー:", err);
+        }
+    }
+
+    // ランキング取得：今回テストしたスコア・タイム・ユーザー名と一致する行のみハイライトする
+    async function fetchChapterRanking(rangeKey, containerId, targetHighlight = null) {
+        const listContainer = document.getElementById(containerId);
+        listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #64748b;">ランキング読込中...</p>';
+
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) {
+            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #dc2626;">※GAS未設定</p>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${GAS_WEB_APP_URL}?action=getRanking&range=${encodeURIComponent(rangeKey)}`);
+            if (res.ok) {
+                const data = await res.json();
+                const rankings = data.rankings || [];
+                
+                listContainer.innerHTML = '';
+                if (rankings.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #64748b;">まだ記録がありません。一番乗りを目指そう！</p>';
+                    return;
+                }
+
+                rankings.forEach((r, idx) => {
+                    const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
+                    const timeStr = formatStopwatchTime(r.timeSeconds);
+
+                    const div = document.createElement('div');
+                    div.className = 'ranking-item';
+                    
+                    // プレビュー画面ではハイライトなし、結果画面でのみ「今回の成績」と完全に一致する場合にハイライト
+                    const currentUser = getCurrentUser();
+                    let isThisRunMatch = false;
+                    if (targetHighlight && targetHighlight.username === r.username && targetHighlight.score === r.score && Math.abs(targetHighlight.timeSeconds - r.timeSeconds) < 0.05) {
+                        isThisRunMatch = true;
+                    }
+
+                    if (isThisRunMatch && currentUser !== DEFAULT_GUEST_ID) {
+                        div.classList.add('highlight-user');
+                    }
+
+                    div.innerHTML = `
+                        <div style="font-weight: bold; color: #1e293b;">${medal} ${r.username} ${isThisRunMatch ? '(今回)' : ''}</div>
+                        <div style="color: #c2410c; font-weight: bold;">${r.score}/${r.total}問 <span style="color: #475569; font-weight: normal; font-size: 0.8rem; font-family: monospace;">(${timeStr})</span></div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
+        } catch (e) {
+            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #dc2626;">ランキングの取得に失敗しました</p>';
+        }
+    }
+
+    async function sendTestResultToGAS(testRange, score, total, timeSeconds) {
+        const user = getCurrentUser();
+        if (user === DEFAULT_GUEST_ID) return;
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
+
+        try {
+            const payload = {
+                action: "saveTestResult",
+                username: user,
+                testRange: testRange,
+                score: score,
+                total: total,
+                timeSeconds: timeSeconds
+            };
+            await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("テスト結果送信エラー:", err);
+        }
+    }
+
     async function syncToGAS(targetUser = null, targetMap = null) {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         const user = targetUser || getCurrentUser();
-        
         if (user === DEFAULT_GUEST_ID) return;
 
         const mapToSave = targetMap !== null ? targetMap : getWordHistoryMap();
@@ -759,7 +938,6 @@
         }
     }
 
-    // --- クラウドから特定IDのデータを削除 ---
     async function deleteFromGAS(targetUser) {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         if (!targetUser || targetUser === DEFAULT_GUEST_ID) return;
@@ -779,7 +957,6 @@
         }
     }
 
-    // --- データ内容比較ヘルパー（タイムスタンプ除外） ---
     function getNormalizedDataString(mapObj) {
         if (!mapObj || typeof mapObj !== 'object') return "{}";
         const copy = { ...mapObj };
@@ -793,10 +970,8 @@
         return keys.length > 0;
     }
 
-    // --- (3) トップページ：新規ID登録 ---
     async function openNewIdRegistration() {
         const allData = await fetchAllGASData();
-
         while (true) {
             const newName = await showCustomPrompt("ナマエヲ イレテクダサイ", "", true);
             if (newName === null) return;
@@ -828,7 +1003,6 @@
         }
     }
 
-    // --- (1) データ管理①：ローカルファイル（JSON）で復元 ---
     function importDataFromFile(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -844,14 +1018,13 @@
                 await showCustomAlert(`「${user}」ノ データ ヲ フクゲンシタ！`);
                 location.reload();
             } catch (err) {
-                await showCustomAlert("ファイルノ 読ミ込ミ ニ 失敗シタ。正シイ JSON ファイル ヲ 選択シテクダサイ。");
+                await showCustomAlert("ファイルノ 読ミ込ミ ニ 失敗シタ。");
             }
         };
         reader.readAsText(file);
         event.target.value = "";
     }
 
-    // --- (1) データ管理②：現在のデータをローカルファイル（JSON)で保存 ---
     async function exportDataToFile() {
         const user = getCurrentUser();
         const data = localStorage.getItem(`vocab_map_${user}`) || "{}";
@@ -866,18 +1039,9 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        const ua = navigator.userAgent;
-        let locationMsg = `ダウンロード フォルダ（${fileName}）`;
-        if (/iPhone|iPad|iPod/i.test(ua)) {
-            locationMsg = `「ファイル」アプリ ＞ ダウンロード フォルダ（${fileName}）`;
-        } else if (/Android/i.test(ua)) {
-            locationMsg = `「Files（ファイル）」アプリ ＞ ダウンロード（${fileName}）`;
-        }
-        await showCustomAlert(`${locationMsg} ニ\nホゾンシタ。`);
+        await showCustomAlert(`ダウンロードフォルダにホゾンシタ。`);
     }
 
-    // --- (1) データ管理③：名前（ID名）の変更 ---
     async function changeUserIdFlow() {
         const oldUser = getCurrentUser();
         const allData = await fetchAllGASData();
@@ -912,7 +1076,6 @@
         }
     }
 
-    // --- (1) データ管理④：名前（ID名）の切り替え ---
     async function switchUserIdFlow() {
         const targetName = await showCustomPrompt("切替エル 名前（ID名）ヲ 入力シテクダサイ:", "", true);
         if (targetName === null || !targetName) return;
@@ -934,7 +1097,6 @@
         await showCustomAlert(`「${targetName}」ニ 切替エタ。`);
     }
 
-    // --- (1) データ管理⑤：現在の名前（ID）データの削除 ---
     async function deleteCurrentUserDataFlow() {
         const confirmed = await showCustomConfirmYesNo("ホントウ ニ ケス ノ カ？");
         if (!confirmed) return;
@@ -951,9 +1113,7 @@
         await showCustomAlert("データ ヲ 削除シタ。");
     }
 
-    // --- 起動時セッション初期化（クラウドとの新旧比較・同期確認を含む） ---
     async function initAppSession() {
-        // 旧「チキュウジン1」のデータが残っている場合は「ゲスト」へ自動移行
         const oldGuestData = localStorage.getItem('vocab_map_チキュウジン1');
         if (oldGuestData && !localStorage.getItem('vocab_map_ゲスト')) {
             localStorage.setItem('vocab_map_ゲスト', oldGuestData);
@@ -974,10 +1134,9 @@
             localStorage.setItem(currentUserKey, oldCommonData);
         }
 
-        // 先にローカルのデータで画面を描画しておく
         showModeSelect();
+        fetchAppSettings();
 
-        // ゲスト以外のIDでログインしている場合、クラウドデータと新旧を比較
         if (user !== DEFAULT_GUEST_ID) {
             const allData = await fetchAllGASData();
             const cloudObj = allData[user];
@@ -991,7 +1150,6 @@
                     localObj = {};
                 }
 
-                // デバイス側にデータが全く無い場合はそのままクラウドデータを適用
                 if (!hasWordData(localObj)) {
                     localStorage.setItem(currentUserKey, JSON.stringify(cloudObj));
                     updateOverallStats();
@@ -999,8 +1157,6 @@
                     const localTime = localObj._updatedAt || 0;
                     const cloudTime = cloudObj._updatedAt || 0;
                     const isContentDifferent = getNormalizedDataString(localObj) !== getNormalizedDataString(cloudObj);
-
-                    // クラウド側の更新時刻が新しい場合、または時刻未記録同士で内容が異なる場合
                     const isDeviceOlder = (cloudTime > localTime) || (cloudTime === 0 && localTime === 0 && isContentDifferent);
 
                     if (isDeviceOlder && isContentDifferent) {
@@ -1030,7 +1186,6 @@
             const ranking = [];
 
             Object.keys(allData).forEach(uName => {
-                if (uName === DEFAULT_GUEST_ID) return;
                 const map = allData[uName];
                 let pts = 0;
                 wordsData.forEach(w => {
@@ -1049,12 +1204,19 @@
                 return;
             }
 
+            const currentUser = getCurrentUser();
+
             ranking.forEach((r, idx) => {
                 const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
                 const div = document.createElement('div');
                 div.className = 'ranking-item';
+
+                if (r.name === currentUser && currentUser !== DEFAULT_GUEST_ID) {
+                    div.classList.add('highlight-user');
+                }
+
                 div.innerHTML = `
-                    <div style="font-weight:bold; font-size:1.05rem;">${medal} ${r.name}</div>
+                    <div style="font-weight:bold; font-size:1.05rem;">${medal} ${r.name} ${r.name === currentUser && currentUser !== DEFAULT_GUEST_ID ? '(あなた)' : ''}</div>
                     <div style="font-weight:bold; color:#c2410c;">${r.rate}% (${r.pts} pt)</div>
                 `;
                 listContainer.appendChild(div);
@@ -3414,19 +3576,16 @@
         if (!map[englishWord][type]) map[englishWord][type] = [];
 
         map[englishWord][type].push(isCorrect);
-        
         const limit = maxHistoryCounts[type] || 4;
         if (map[englishWord][type].length > limit) {
             map[englishWord][type] = map[englishWord][type].slice(-limit);
         }
-        
         saveWordHistoryMap(map);
     }
 
     function getWordCorrectPoints(hObj) {
         if (!hObj) return 0;
         let points = 0;
-
         const types = ['ja_choice', 'en_choice', 'en_typing'];
         types.forEach(t => {
             let arr = [];
@@ -3435,18 +3594,15 @@
             } else if (hObj[t] && Array.isArray(hObj[t])) {
                 arr = hObj[t];
             }
-            
             const limit = maxHistoryCounts[t];
             const validArr = arr.slice(-limit);
             points += validArr.filter(r => r === true).length;
         });
-
         return points;
     }
 
     function calcChapterAchievement(wordsInChapter) {
         if (!wordsInChapter || wordsInChapter.length === 0) return { rate: 0, learnedRatio: "未学習" };
-        
         const map = getWordHistoryMap();
         let totalPoints = 0;
         let totalTestedWords = 0;
@@ -3463,7 +3619,6 @@
         });
 
         if (totalTestedWords === 0 && totalPoints === 0) return { rate: 0, learnedRatio: "未学習" };
-
         const maxPossiblePoints = wordsInChapter.length * 11;
         const rate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
         return { rate: rate, learnedRatio: `${rate}%` };
@@ -3471,15 +3626,12 @@
 
     function updateOverallStats() {
         if (wordsData.length === 0) return;
-
         const map = getWordHistoryMap();
         let totalPoints = 0;
 
         wordsData.forEach(w => {
             const hObj = map[w.english];
-            if (hObj) {
-                totalPoints += getWordCorrectPoints(hObj);
-            }
+            if (hObj) totalPoints += getWordCorrectPoints(hObj);
         });
 
         const maxPossiblePoints = wordsData.length * 11;
@@ -3504,15 +3656,12 @@
     }
 
     let audioCtx = null;
-
     function getAudioContext() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
         }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         return audioCtx;
     }
 
@@ -3627,21 +3776,6 @@
                 osc.start(now + n.t);
                 osc.stop(now + n.t + n.d);
             });
-
-            const chordTime = now + 0.80;
-            const chordNotes = [523.25, 659.25, 783.99, 1046.50];
-            chordNotes.forEach(f => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.setValueAtTime(f, chordTime);
-                gain.gain.setValueAtTime(0.2, chordTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, chordTime + 0.9);
-                osc.start(chordTime);
-                osc.stop(chordTime + 0.9);
-            });
         } catch(e) {}
     }
 
@@ -3666,7 +3800,6 @@
             mainTitle.style.color = "#7c2d12";
             subTitle.innerText = "英単語アプリ (LEAP)";
             subTitle.style.display = "block";
-            changeMikanSpeech();
         } else {
             mainTitle.innerText = "mikan-seijin";
             mainTitle.style.fontSize = "1.2rem";
@@ -3677,6 +3810,7 @@
     }
 
     function showModeSelect() {
+        stopLiveTimer();
         document.getElementById('current-user-display').innerText = `ログイン中: ${getCurrentUser()}`;
         updateOverallStats();
         switchScreen('mode-screen');
@@ -3720,13 +3854,40 @@
                 btn.onclick = () => {
                     currentChapterOrRange = range;
                     currentTargetName = `テスト: 範囲${range}`;
-                    startTestQuiz(range);
+                    openTestPreview(range, `テスト範囲 ${range}`);
                 };
                 listContainer.appendChild(btn);
             });
         }
 
         switchScreen('chapter-screen');
+    }
+
+    function openTimeAttackLobby() {
+        getAudioContext();
+        currentMode = 'test';
+        currentChapterOrRange = featuredTimeAttackRange;
+        currentTargetName = `タイムアタック: 範囲${featuredTimeAttackRange}`;
+        openTestPreview(featuredTimeAttackRange, `⚡ タイムアタック (範囲 ${featuredTimeAttackRange})`);
+    }
+
+    function openTestPreview(rangeKey, titleText) {
+        document.getElementById('preview-title').innerText = titleText;
+        fetchChapterRanking(rangeKey, 'preview-ranking-list', null); // プレビュー時はハイライト対象なし
+        switchScreen('test-preview-screen');
+    }
+
+    function backFromTestPreview() {
+        if (currentMode === 'test') {
+            selectMode('test');
+        } else {
+            showModeSelect();
+        }
+    }
+
+    function startActualTest() {
+        getAudioContext();
+        startTestQuiz(currentChapterOrRange);
     }
 
     function showSubChapters(range) {
@@ -3742,7 +3903,7 @@
         const chapters = [...new Set(filteredWords.map(w => w.chapter))];
 
         chapters.forEach(chap => {
-            const wordsInChap = filteredWords.filter(w => w.chapter === chap);
+            const wordsInChap = filteredWords.filter(w => w.test === chap);
             const achieve = calcChapterAchievement(wordsInChap);
 
             const btn = document.createElement('button');
@@ -3812,7 +3973,9 @@
         const enTypingWords = selected.slice(16, 20).map(w => ({ word: w, quizType: 'en_typing' }));
 
         currentQuestions = [...jaChoiceWords, ...enChoiceWords, ...enTypingWords];
+        
         setupQuiz();
+        startLiveTimer();
     }
 
     function setupQuiz() {
@@ -3824,6 +3987,7 @@
     }
 
     async function confirmQuitQuiz() {
+        stopLiveTimer();
         const ok = await showCustomConfirmYesNo("テストヲ 中断シテ メニュー ニ 戻リマスカ？");
         if (ok) {
             if (currentMode === 'learn') {
@@ -3831,22 +3995,28 @@
             } else {
                 selectMode('test');
             }
+        } else {
+            if (currentMode === 'test') startLiveTimer();
         }
     }
 
     function startRetryMistakes() {
         getAudioContext();
+        stopLiveTimer();
         currentTargetName += " (再テスト)";
         currentQuestions = [...mistakeList].sort(() => Math.random() - 0.5);
         sessionWords = currentQuestions.map(q => q.word);
         currentIndex = 0;
         score = 0;
         mistakeList = [];
+        
         switchScreen('quiz-screen');
         showQuestion();
+        document.getElementById('live-timer').innerText = "⏱️ --:--.-";
     }
 
     function retryCurrentTest() {
+        stopLiveTimer();
         if (currentMode === 'learn') {
             startLearnQuizWithType(currentSelectedQuizType);
         } else {
@@ -3968,7 +4138,7 @@
             if (currentIndex < currentQuestions.length) {
                 showQuestion();
             } else {
-                showResult();
+                finishQuiz();
             }
         }, 900);
     }
@@ -4005,9 +4175,26 @@
             if (currentIndex < currentQuestions.length) {
                 showQuestion();
             } else {
-                showResult();
+                finishQuiz();
             }
         }, 1200);
+    }
+
+    async function finishQuiz() {
+        stopLiveTimer();
+        if (currentMode === 'test' && currentQuestions.length === 20 && testStartTime > 0) {
+            testElapsedSeconds = (Date.now() - testStartTime) / 1000;
+            // 今回の成績オブジェクトを保持
+            lastTestRecord = {
+                username: getCurrentUser(),
+                score: score,
+                timeSeconds: testElapsedSeconds
+            };
+            await sendTestResultToGAS(currentChapterOrRange, score, currentQuestions.length, testElapsedSeconds);
+        } else {
+            lastTestRecord = null;
+        }
+        showResult();
     }
 
     document.addEventListener('keypress', function(e) {
@@ -4046,6 +4233,21 @@
 
         const total = currentQuestions.length;
         document.getElementById('score-text').innerText = `正解数: ${score} / ${total} 問`;
+
+        const timeTextEl = document.getElementById('result-time-text');
+        const rankingBox = document.getElementById('result-ranking-box');
+
+        if (currentMode === 'test' && total === 20 && testElapsedSeconds > 0) {
+            timeTextEl.innerText = `⏱️ クリアタイム: ${formatStopwatchTime(testElapsedSeconds)}`;
+            timeTextEl.style.display = 'block';
+
+            rankingBox.style.display = 'block';
+            // 今回の成績（lastTestRecord）を渡して、一致かつ5位以内ならハイライト
+            fetchChapterRanking(currentChapterOrRange, 'result-ranking-list', lastTestRecord);
+        } else {
+            timeTextEl.style.display = 'none';
+            rankingBox.style.display = 'none';
+        }
 
         const actionBtn = document.getElementById('result-back-action-btn');
         if (currentMode === 'learn') {
@@ -4174,7 +4376,6 @@
         document.getElementById('data-management-panel').style.display = 'none';
 
         const map = getWordHistoryMap();
-
         const groups = {};
         wordsData.forEach(w => {
             const groupNum = Math.floor((w.number - 1) / 100);
@@ -4195,7 +4396,6 @@
             btn.onclick = () => {
                 showHistoryGroupScreen(groupKey, groupWords, map);
             };
-
             listContainer.appendChild(btn);
         });
 
@@ -4301,7 +4501,7 @@
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
         "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
         "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ 마エヲムケ／", "＼オマエノモノハ オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
@@ -4311,13 +4511,6 @@
         "＼イツカ キミニ ミセテアゲタイ／", "＼ニゲチャ ダメダ／",
         "＼エライヒトニハ ワカランノデスヨ／", "＼ソコニ シビレル！ アコガレルゥ！／", "＼ミカン パワー ゼンカイ／", "＼３フンダケ マッテヤル／"
     ];
-
-    function changeMikanSpeech() {
-        const textElement = document.getElementById('mikan-speech');
-        if (textElement && mikanSpeeches.length > 0) {
-            textElement.innerText = mikanSpeeches[Math.floor(Math.random() * mikanSpeeches.length)];
-        }
-    }
 
     function changeResultMikanSpeech() {
         const textElement = document.getElementById('result-mikan-speech');
