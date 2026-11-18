@@ -779,6 +779,20 @@
         }
     }
 
+    // --- データ内容比較ヘルパー（タイムスタンプ除外） ---
+    function getNormalizedDataString(mapObj) {
+        if (!mapObj || typeof mapObj !== 'object') return "{}";
+        const copy = { ...mapObj };
+        delete copy._updatedAt;
+        return JSON.stringify(copy);
+    }
+
+    function hasWordData(mapObj) {
+        if (!mapObj || typeof mapObj !== 'object') return false;
+        const keys = Object.keys(mapObj).filter(k => k !== '_updatedAt');
+        return keys.length > 0;
+    }
+
     // --- (3) トップページ：新規ID登録 ---
     async function openNewIdRegistration() {
         const allData = await fetchAllGASData();
@@ -801,6 +815,7 @@
             if (currentUser === DEFAULT_GUEST_ID) {
                 initialMap = getWordHistoryMap();
             }
+            initialMap._updatedAt = Date.now();
 
             localStorage.setItem('vocab_current_user', newName);
             localStorage.setItem(`vocab_map_${newName}`, JSON.stringify(initialMap));
@@ -822,6 +837,7 @@
         reader.onload = async function(e) {
             try {
                 const importedData = JSON.parse(e.target.result);
+                importedData._updatedAt = Date.now();
                 const user = getCurrentUser();
                 localStorage.setItem(`vocab_map_${user}`, JSON.stringify(importedData));
                 await syncToGAS(user, importedData);
@@ -880,6 +896,7 @@
             }
 
             const currentData = getWordHistoryMap();
+            currentData._updatedAt = Date.now();
             localStorage.setItem(`vocab_map_${newName}`, JSON.stringify(currentData));
             localStorage.removeItem(`vocab_map_${oldUser}`);
             localStorage.setItem('vocab_current_user', newName);
@@ -934,7 +951,7 @@
         await showCustomAlert("データ ヲ 削除シタ。");
     }
 
-    // --- 起動時セッション初期化（旧データ自動救済含む） ---
+    // --- 起動時セッション初期化（クラウドとの新旧比較・同期確認を含む） ---
     async function initAppSession() {
         // 旧「チキュウジン1」のデータが残っている場合は「ゲスト」へ自動移行
         const oldGuestData = localStorage.getItem('vocab_map_チキュウジン1');
@@ -957,15 +974,45 @@
             localStorage.setItem(currentUserKey, oldCommonData);
         }
 
+        // 先にローカルのデータで画面を描画しておく
+        showModeSelect();
+
+        // ゲスト以外のIDでログインしている場合、クラウドデータと新旧を比較
         if (user !== DEFAULT_GUEST_ID) {
             const allData = await fetchAllGASData();
-            const latestLocal = localStorage.getItem(currentUserKey);
-            if (allData[user] && (!latestLocal || latestLocal === "{}")) {
-                localStorage.setItem(currentUserKey, JSON.stringify(allData[user]));
+            const cloudObj = allData[user];
+
+            if (cloudObj && hasWordData(cloudObj)) {
+                const latestLocalStr = localStorage.getItem(currentUserKey);
+                let localObj = {};
+                try {
+                    localObj = latestLocalStr ? JSON.parse(latestLocalStr) : {};
+                } catch (e) {
+                    localObj = {};
+                }
+
+                // デバイス側にデータが全く無い場合はそのままクラウドデータを適用
+                if (!hasWordData(localObj)) {
+                    localStorage.setItem(currentUserKey, JSON.stringify(cloudObj));
+                    updateOverallStats();
+                } else {
+                    const localTime = localObj._updatedAt || 0;
+                    const cloudTime = cloudObj._updatedAt || 0;
+                    const isContentDifferent = getNormalizedDataString(localObj) !== getNormalizedDataString(cloudObj);
+
+                    // クラウド側の更新時刻が新しい場合、または時刻未記録同士で内容が異なる場合
+                    const isDeviceOlder = (cloudTime > localTime) || (cloudTime === 0 && localTime === 0 && isContentDifferent);
+
+                    if (isDeviceOlder && isContentDifferent) {
+                        const shouldUpdate = await showCustomConfirmYesNo("クラウドに新しいデータがあります。\n更新しますか？");
+                        if (shouldUpdate) {
+                            localStorage.setItem(currentUserKey, JSON.stringify(cloudObj));
+                            updateOverallStats();
+                        }
+                    }
+                }
             }
         }
-
-        showModeSelect();
     }
 
     async function showRankingScreen() {
@@ -1027,6 +1074,7 @@
     }
 
     function saveWordHistoryMap(map) {
+        map._updatedAt = Date.now();
         const userKey = `vocab_map_${getCurrentUser()}`;
         localStorage.setItem(userKey, JSON.stringify(map));
         syncToGAS();
