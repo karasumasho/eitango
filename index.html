@@ -27,7 +27,7 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            height: 85vh;
+            height: 88vh;
             overflow: hidden;
         }
         .container.home-mode {
@@ -49,6 +49,13 @@
             padding-right: 4px;
             flex-grow: 1;
         }
+        .mistake-scroll-box {
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 4px;
+            flex-grow: 0;
+            flex-shrink: 1;
+        }
         .btn, .choice-btn {
             width: 100%;
             padding: 14px;
@@ -63,6 +70,7 @@
             margin-bottom: 10px;
             transition: all 0.2s;
             flex-shrink: 0;
+            line-height: 1.35;
         }
         .btn:hover, .choice-btn:hover {
             border-color: #f97316;
@@ -169,12 +177,25 @@
         }
         .progress-container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             font-size: 0.9rem;
             color: #9a3412;
             margin-bottom: 6px;
             flex-shrink: 0;
+            gap: 4px;
+        }
+        .live-timer-banner {
+            font-size: 1.45rem;
+            font-weight: bold;
+            color: #c2410c;
+            font-family: monospace;
+            background: #ffedd5;
+            border: 2px solid #fed7aa;
+            padding: 4px 16px;
+            border-radius: 12px;
+            letter-spacing: 1px;
         }
         .quiz-type-badge {
             text-align: center;
@@ -275,9 +296,11 @@
 
         .result-box {
             text-align: center;
-            font-size: 1.2rem;
-            margin: 10px 0;
+            font-size: 1.15rem;
+            font-weight: bold;
+            margin: 4px 0;
             color: #1f2937;
+            flex-shrink: 0;
         }
         
         .overlay-screen {
@@ -359,8 +382,8 @@
             background: #ffffff;
             border: 1px solid #fed7aa;
             border-radius: 8px;
-            padding: 10px 12px;
-            margin-bottom: 6px;
+            padding: 8px 12px;
+            margin-bottom: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -370,6 +393,27 @@
             background: #fef08a !important;
             border: 2px solid #eab308 !important;
             font-weight: bold;
+        }
+        .rank-left-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .rank-medal-col {
+            display: inline-block;
+            width: 1.4em;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .rank-num-col {
+            display: inline-block;
+            width: 1.6em;
+            text-align: right;
+            font-family: monospace;
+            font-weight: bold;
+            color: #7c2d12;
+            flex-shrink: 0;
+            margin-right: 4px;
         }
 
         .data-management-panel {
@@ -398,6 +442,16 @@
             font-weight: bold;
             color: #7c2d12;
             text-align: center;
+        }
+        .result-mikan-speech {
+            font-size: 1.02rem;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+        .result-mikan-img {
+            width: 91px;
+            height: 91px;
+            object-fit: contain;
         }
 
         /* カスタムダイアログ（モーダル）用 */
@@ -483,13 +537,12 @@
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
             <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
-            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem; background-color: #059669;" onclick="selectMode('test')">🎯 総合テスト (20問ミックス)</button>
             <button class="btn ranking-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showRankingScreen()">🏆 達成率ランキング</button>
             <button class="btn history-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showHistoryScreen()">📊 単語別アチーブメント・履歴</button>
             
             <div class="total-stats-card">
                 <div class="total-stats-title">📊 マイ トータル達成率 (総合)</div>
-                <div class="total-stats-value" id="total-achievement-text">0%</div>
+                <div class="total-stats-value" id="total-achievement-text">0.0%</div>
             </div>
 
             <div class="mikan-container">
@@ -498,7 +551,7 @@
                 <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
 
-            <button class="btn timeattack-main-btn" style="padding: 14px; margin-top: 6px;" onclick="openTimeAttackLobby()" id="timeattack-lobby-btn">⚡ 注目チャプター タイムアタック！</button>
+            <button class="btn timeattack-main-btn" style="padding: 12px; margin-top: 6px;" onclick="openTimeAttackLobby()" id="timeattack-lobby-btn">⚡ 注目チャプター タイムアタック！<br><span style="font-size: 0.9rem;">(範囲 1-50)</span></button>
         </div>
     </div>
 
@@ -535,7 +588,7 @@
             <button class="btn primary-btn" style="padding: 14px;" onclick="startLearnQuizWithType('ja_choice')">📖 和訳 4択テスト (英 ➔ 日)</button>
             <button class="btn primary-btn" style="padding: 14px; background-color: #0284c7;" onclick="startLearnQuizWithType('en_choice')">🔤 英訳 4択テスト (日 ➔ 英)</button>
             <button class="btn primary-btn" style="padding: 14px; background-color: #7c3aed;" onclick="startLearnQuizWithType('en_typing')">⌨️ 英訳 タイピング (日 ➔ 英)</button>
-            <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする (意味・成績を見る)</button>
+            <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする<br><span style="font-size: 0.85rem;">(意味・成績を見る)</span></button>
         </div>
         <button class="btn back-btn" onclick="backToSubChapters()">チャプター選択に戻る</button>
     </div>
@@ -543,8 +596,8 @@
     <!-- ③ クイズ画面 -->
     <div id="quiz-screen" class="screen">
         <div class="progress-container">
+            <div id="live-timer" class="live-timer-banner" style="display: none;">⏱️ 00:00.0</div>
             <span id="progress">第 1 問 / 全 20 問</span>
-            <span id="live-timer" style="font-weight: bold; color: #c2410c; font-family: monospace;">⏱️ 00:00.0</span>
         </div>
         <div class="quiz-type-badge" id="quiz-type-badge"></div>
         <div class="feedback-banner" id="feedback-banner"></div>
@@ -565,35 +618,39 @@
     </div>
 
     <!-- ④ 結果画面 -->
-    <div id="result-screen" class="screen">
-        <h2 style="color: #7c2d12; margin-bottom: 0px;">テスト終了！</h2>
+    <div id="result-screen" class="screen" style="overflow-y: auto;">
+        <h2 style="color: #7c2d12; margin: 0 0 4px 0; text-align: center; font-size: 1.25rem; flex-shrink: 0;">テスト終了！</h2>
         
-        <div class="mikan-container" style="margin-top: 10px; margin-bottom: 10px;">
-            <div class="mikan-speech-text" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
-            <img src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 100px; height: 100px; object-fit: contain;">
+        <div class="mikan-container" style="margin-top: 4px; margin-bottom: 6px;">
+            <div class="mikan-speech-text result-mikan-speech" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
+            <img class="result-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人">
         </div>
 
-        <div class="result-box" id="score-text" style="margin-top: 0; margin-bottom: 4px;"></div>
-        <div id="result-time-text" style="text-align: center; font-weight: bold; color: #d97706; font-size: 1.05rem; margin-bottom: 8px; font-family: monospace;"></div>
+        <div class="result-box" id="score-text"></div>
+        <div id="result-time-text" style="text-align: center; font-weight: bold; color: #c2410c; font-size: 1.3rem; margin-bottom: 6px; font-family: monospace; flex-shrink: 0;"></div>
         
-        <div class="scroll-container" id="result-scroll-container">
-            <button class="btn primary-btn" id="retry-same-btn" onclick="retryCurrentTest()" style="background-color: #059669; margin-bottom: 6px;">🔄 もう一度テストする</button>
-            
-            <!-- タイムアタック（総合テスト）結果直下のランキング表示エリア -->
-            <div id="result-ranking-box" style="display: none; background: #ffedd5; border: 2px solid #fed7aa; border-radius: 12px; padding: 10px; margin-bottom: 8px;">
-                <div style="font-size: 0.8rem; font-weight: bold; color: #c2410c; margin-bottom: 4px; text-align: center;">👑 今回のチャプターランキング (上位5位)</div>
-                <div id="result-ranking-list">
-                    <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
-                </div>
+        <!-- タイムアタック（総合テスト）結果直下のランキング表示エリア -->
+        <div id="result-ranking-box" style="display: none; background: #ffedd5; border: 2px solid #fed7aa; border-radius: 10px; padding: 8px; margin-bottom: 6px; flex-shrink: 0;">
+            <div style="font-size: 0.78rem; font-weight: bold; color: #c2410c; margin-bottom: 4px; text-align: center;">👑 今回のチャプターランキング (上位5位)</div>
+            <div id="result-ranking-list">
+                <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
             </div>
+        </div>
 
-            <button class="btn primary-btn" id="retry-mistakes-btn" style="display:none; margin-bottom: 6px;" onclick="startRetryMistakes()">間違えた問題だけ再テスト</button>
-            <button class="btn secondary-btn" onclick="showDetailScreen()" style="margin-bottom: 6px;">📖 今回の単語を見る</button>
-            
-            <div id="mistake-inline-container" style="margin-top: 10px;"></div>
+        <!-- アクションボタン群 -->
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; margin-bottom: 6px;">
+            <button class="btn primary-btn" id="retry-same-btn" onclick="retryCurrentTest()" style="background-color: #059669; padding: 10px; margin: 0; font-size: 0.9rem;">🔄 もう一度テストする</button>
+            <button class="btn primary-btn" id="retry-mistakes-btn" style="display:none; padding: 10px; margin: 0; font-size: 0.9rem;" onclick="startRetryMistakes()">間違えた問題だけ再テスト</button>
+            <button class="btn secondary-btn" onclick="showDetailScreen()" style="padding: 10px; margin: 0; font-size: 0.9rem;">📖 今回の単語を見る</button>
+        </div>
 
-            <button class="btn" style="margin-top: 10px;" onclick="handleResultBackToChapter()" id="result-back-action-btn">出題・回答形式選択に戻る</button>
-            <button class="btn back-btn" onclick="showModeSelect()">最初に戻る</button>
+        <!-- 間違えた単語リスト（最大360px＝約4倍の高さまで広がり、それを超えたらスクロール） -->
+        <div class="mistake-scroll-box" id="mistake-inline-container" style="border-top: 1px dashed #fed7aa; padding-top: 4px; margin-bottom: 6px;"></div>
+
+        <!-- 下部戻りボタン -->
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-shrink: 0;">
+            <button class="btn" style="padding: 10px; margin: 0; font-size: 0.9rem;" onclick="handleResultBackToChapter()" id="result-back-action-btn">出題・回答形式選択に戻る</button>
+            <button class="btn back-btn" style="padding: 10px; margin: 0; font-size: 0.9rem;" onclick="showModeSelect()">最初に戻る</button>
         </div>
     </div>
 
@@ -673,11 +730,12 @@
     const DEFAULT_GUEST_ID = "ゲスト";
     
     let featuredTimeAttackRange = "1-50";
+    let isFromLobby = false;
 
     let testStartTime = 0;
     let testElapsedSeconds = 0;
     let timerInterval = null;
-    let lastTestRecord = null; // 今回のテスト成績（ハイライト判定用）
+    let lastTestRecord = null;
 
     function formatStopwatchTime(totalSeconds) {
         const mins = Math.floor(totalSeconds / 60);
@@ -692,6 +750,10 @@
         stopLiveTimer();
         testStartTime = Date.now();
         const timerEl = document.getElementById('live-timer');
+        if (timerEl) {
+            timerEl.style.display = 'block';
+            timerEl.innerText = '⏱️ 00:00.0';
+        }
         
         timerInterval = setInterval(() => {
             const currentSec = (Date.now() - testStartTime) / 1000;
@@ -830,7 +892,9 @@
                 if (data && data.timeAttackRange) {
                     featuredTimeAttackRange = data.timeAttackRange;
                     const btnEl = document.getElementById('timeattack-lobby-btn');
-                    if (btnEl) btnEl.innerText = `⚡ 注目チャプター タイムアタック！ (範囲 ${featuredTimeAttackRange})`;
+                    if (btnEl) {
+                        btnEl.innerHTML = `⚡ 注目チャプター タイムアタック！<br><span style="font-size: 0.9rem;">(範囲 ${featuredTimeAttackRange})</span>`;
+                    }
                 }
             }
         } catch (err) {
@@ -838,7 +902,6 @@
         }
     }
 
-    // ランキング取得：今回テストしたスコア・タイム・ユーザー名と一致する行のみハイライトする
     async function fetchChapterRanking(rangeKey, containerId, targetHighlight = null) {
         const listContainer = document.getElementById(containerId);
         listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #64748b;">ランキング読込中...</p>';
@@ -861,13 +924,13 @@
                 }
 
                 rankings.forEach((r, idx) => {
-                    const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
+                    const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "";
+                    const rankNumStr = `${idx + 1}.`;
                     const timeStr = formatStopwatchTime(r.timeSeconds);
 
                     const div = document.createElement('div');
                     div.className = 'ranking-item';
                     
-                    // プレビュー画面ではハイライトなし、結果画面でのみ「今回の成績」と完全に一致する場合にハイライト
                     const currentUser = getCurrentUser();
                     let isThisRunMatch = false;
                     if (targetHighlight && targetHighlight.username === r.username && targetHighlight.score === r.score && Math.abs(targetHighlight.timeSeconds - r.timeSeconds) < 0.05) {
@@ -879,7 +942,11 @@
                     }
 
                     div.innerHTML = `
-                        <div style="font-weight: bold; color: #1e293b;">${medal} ${r.username} ${isThisRunMatch ? '(今回)' : ''}</div>
+                        <div class="rank-left-group" style="font-weight: bold; color: #1e293b;">
+                            <span class="rank-medal-col">${medal}</span>
+                            <span class="rank-num-col">${rankNumStr}</span>
+                            <span>${r.username}</span>
+                        </div>
                         <div style="color: #c2410c; font-weight: bold;">${r.score}/${r.total}問 <span style="color: #475569; font-weight: normal; font-size: 0.8rem; font-family: monospace;">(${timeStr})</span></div>
                     `;
                     listContainer.appendChild(div);
@@ -1192,11 +1259,11 @@
                     pts += getWordCorrectPoints(map[w.english]);
                 });
                 const maxPts = wordsData.length * 11;
-                const rate = Math.min(100, Math.round((pts / maxPts) * 100));
-                ranking.push({ name: uName, rate: rate, pts: pts });
+                const rateVal = Math.min(100, (pts / maxPts) * 100);
+                ranking.push({ name: uName, rateVal: rateVal, rateStr: rateVal.toFixed(1), pts: pts });
             });
 
-            ranking.sort((a, b) => b.rate - a.rate || b.pts - a.pts);
+            ranking.sort((a, b) => b.rateVal - a.rateVal || b.pts - a.pts);
 
             listContainer.innerHTML = '';
             if (ranking.length === 0) {
@@ -1207,7 +1274,8 @@
             const currentUser = getCurrentUser();
 
             ranking.forEach((r, idx) => {
-                const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}.`;
+                const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "";
+                const rankNumStr = `${idx + 1}.`;
                 const div = document.createElement('div');
                 div.className = 'ranking-item';
 
@@ -1216,8 +1284,12 @@
                 }
 
                 div.innerHTML = `
-                    <div style="font-weight:bold; font-size:1.05rem;">${medal} ${r.name} ${r.name === currentUser && currentUser !== DEFAULT_GUEST_ID ? '(あなた)' : ''}</div>
-                    <div style="font-weight:bold; color:#c2410c;">${r.rate}% (${r.pts} pt)</div>
+                    <div class="rank-left-group" style="font-weight:bold; font-size:1.05rem;">
+                        <span class="rank-medal-col">${medal}</span>
+                        <span class="rank-num-col">${rankNumStr}</span>
+                        <span>${r.name}</span>
+                    </div>
+                    <div style="font-weight:bold; color:#c2410c;">${r.rateStr}% (${r.pts} pt)</div>
                 `;
                 listContainer.appendChild(div);
             });
@@ -3620,8 +3692,8 @@
 
         if (totalTestedWords === 0 && totalPoints === 0) return { rate: 0, learnedRatio: "未学習" };
         const maxPossiblePoints = wordsInChapter.length * 11;
-        const rate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
-        return { rate: rate, learnedRatio: `${rate}%` };
+        const rate = Math.min(100, (totalPoints / maxPossiblePoints) * 100);
+        return { rate: rate, learnedRatio: `${rate.toFixed(1)}%` };
     }
 
     function updateOverallStats() {
@@ -3635,8 +3707,8 @@
         });
 
         const maxPossiblePoints = wordsData.length * 11;
-        const overallRate = Math.min(100, Math.round((totalPoints / maxPossiblePoints) * 100));
-        document.getElementById('total-achievement-text').innerText = `${overallRate}%`;
+        const overallRate = Math.min(100, (totalPoints / maxPossiblePoints) * 100);
+        document.getElementById('total-achievement-text').innerText = `${overallRate.toFixed(1)}%`;
 
         const minSize = 65;
         const maxSize = 195;
@@ -3819,46 +3891,31 @@
     function selectMode(mode) {
         getAudioContext();
         currentMode = mode;
+        isFromLobby = false;
         const listContainer = document.getElementById('chapter-list');
         listContainer.innerHTML = '';
         const instruction = document.getElementById('chapter-instruction');
         const backBtn = document.getElementById('chapter-back-btn');
         backBtn.onclick = showModeSelect;
 
-        if (mode === 'learn') {
-            instruction.innerText = "学習する範囲を選んでください";
-            const blockRanges = [...new Set(wordsData.map(w => w.test))];
-            
-            blockRanges.forEach(range => {
-                const wordsInRange = wordsData.filter(w => w.test === range);
-                const achieve = calcChapterAchievement(wordsInRange);
+        instruction.innerText = "学習する範囲を選んでください";
+        const blockRanges = [...new Set(wordsData.map(w => w.test))];
+        
+        blockRanges.forEach(range => {
+            const wordsInRange = wordsData.filter(w => w.test === range);
+            const achieve = calcChapterAchievement(wordsInRange);
 
-                const btn = document.createElement('button');
-                btn.className = 'btn chapter-btn';
-                const badgeClass = achieve.learnedRatio === "未学習" ? "badge" : "badge completed";
-                btn.innerHTML = `<span>No. ${range}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
-                
-                btn.onclick = () => {
-                    selectedBlock50 = range;
-                    showSubChapters(range);
-                };
-                listContainer.appendChild(btn);
-            });
-        } else {
-            instruction.innerText = "テストする範囲 (20問ミックス) を選んでください";
-            const testRanges = [...new Set(wordsData.map(w => w.test))];
-            testRanges.forEach(range => {
-                const btn = document.createElement('button');
-                btn.className = 'btn primary-btn';
-                btn.innerText = `テスト範囲 ${range} (20問抽出)`;
-                btn.onclick = () => {
-                    currentChapterOrRange = range;
-                    currentTargetName = `テスト: 範囲${range}`;
-                    openTestPreview(range, `テスト範囲 ${range}`);
-                };
-                listContainer.appendChild(btn);
-            });
-        }
+            const btn = document.createElement('button');
+            btn.className = 'btn chapter-btn';
+            const badgeClass = achieve.learnedRatio === "未学習" ? "badge" : "badge completed";
+            btn.innerHTML = `<span>No. ${range}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
+            
+            btn.onclick = () => {
+                selectedBlock50 = range;
+                showSubChapters(range);
+            };
+            listContainer.appendChild(btn);
+        });
 
         switchScreen('chapter-screen');
     }
@@ -3866,6 +3923,8 @@
     function openTimeAttackLobby() {
         getAudioContext();
         currentMode = 'test';
+        isFromLobby = true;
+        selectedBlock50 = featuredTimeAttackRange;
         currentChapterOrRange = featuredTimeAttackRange;
         currentTargetName = `タイムアタック: 範囲${featuredTimeAttackRange}`;
         openTestPreview(featuredTimeAttackRange, `⚡ タイムアタック (範囲 ${featuredTimeAttackRange})`);
@@ -3873,15 +3932,15 @@
 
     function openTestPreview(rangeKey, titleText) {
         document.getElementById('preview-title').innerText = titleText;
-        fetchChapterRanking(rangeKey, 'preview-ranking-list', null); // プレビュー時はハイライト対象なし
+        fetchChapterRanking(rangeKey, 'preview-ranking-list', null);
         switchScreen('test-preview-screen');
     }
 
     function backFromTestPreview() {
-        if (currentMode === 'test') {
-            selectMode('test');
-        } else {
+        if (isFromLobby) {
             showModeSelect();
+        } else {
+            showSubChapters(selectedBlock50);
         }
     }
 
@@ -3891,6 +3950,9 @@
     }
 
     function showSubChapters(range) {
+        currentMode = 'learn';
+        isFromLobby = false;
+        selectedBlock50 = range;
         const instruction = document.getElementById('chapter-instruction');
         instruction.innerText = `範囲 ${range} 内のチャプターを選んでください`;
         const listContainer = document.getElementById('chapter-list');
@@ -3903,7 +3965,7 @@
         const chapters = [...new Set(filteredWords.map(w => w.chapter))];
 
         chapters.forEach(chap => {
-            const wordsInChap = filteredWords.filter(w => w.test === chap);
+            const wordsInChap = filteredWords.filter(w => w.chapter === chap);
             const achieve = calcChapterAchievement(wordsInChap);
 
             const btn = document.createElement('button');
@@ -3912,6 +3974,7 @@
             btn.innerHTML = `<span>Chapter ${chap}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
             
             btn.onclick = () => {
+                currentMode = 'learn';
                 currentChapterOrRange = chap;
                 currentTargetName = `学習: Ch.${chap}`;
                 showLearnMenu(chap);
@@ -3919,9 +3982,23 @@
             listContainer.appendChild(btn);
         });
 
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn primary-btn';
+        testBtn.style.backgroundColor = '#059669';
+        testBtn.style.marginTop = '12px';
+        testBtn.innerText = `🎯 総合テスト (20問ミックス)`;
+        testBtn.onclick = () => {
+            currentMode = 'test';
+            isFromLobby = false;
+            currentChapterOrRange = range;
+            currentTargetName = `テスト: 範囲${range}`;
+            openTestPreview(range, `総合テスト (範囲 ${range})`);
+        };
+        listContainer.appendChild(testBtn);
+
         const scoreBtn = document.createElement('button');
         scoreBtn.className = 'btn history-btn';
-        scoreBtn.style.marginTop = '10px';
+        scoreBtn.style.marginTop = '2px';
         scoreBtn.innerText = `📊 No. ${range} の成績を見る`;
         scoreBtn.onclick = () => {
             const map = getWordHistoryMap();
@@ -3940,7 +4017,8 @@
         if (currentMode === 'learn') {
             showLearnMenu(currentChapterOrRange);
         } else {
-            selectMode('test');
+            const targetRange = selectedBlock50 || currentChapterOrRange || featuredTimeAttackRange;
+            showSubChapters(targetRange);
         }
     }
 
@@ -3982,6 +4060,10 @@
         currentIndex = 0;
         score = 0;
         mistakeList = [];
+        const timerEl = document.getElementById('live-timer');
+        if (timerEl) {
+            timerEl.style.display = (currentMode === 'test') ? 'block' : 'none';
+        }
         switchScreen('quiz-screen');
         showQuestion();
     }
@@ -3993,7 +4075,11 @@
             if (currentMode === 'learn') {
                 showLearnMenu(currentChapterOrRange);
             } else {
-                selectMode('test');
+                if (isFromLobby) {
+                    showModeSelect();
+                } else {
+                    showSubChapters(selectedBlock50);
+                }
             }
         } else {
             if (currentMode === 'test') startLiveTimer();
@@ -4009,10 +4095,13 @@
         currentIndex = 0;
         score = 0;
         mistakeList = [];
+        testStartTime = 0;
+        
+        const timerEl = document.getElementById('live-timer');
+        if (timerEl) timerEl.style.display = 'none';
         
         switchScreen('quiz-screen');
         showQuestion();
-        document.getElementById('live-timer').innerText = "⏱️ --:--.-";
     }
 
     function retryCurrentTest() {
@@ -4184,7 +4273,6 @@
         stopLiveTimer();
         if (currentMode === 'test' && currentQuestions.length === 20 && testStartTime > 0) {
             testElapsedSeconds = (Date.now() - testStartTime) / 1000;
-            // 今回の成績オブジェクトを保持
             lastTestRecord = {
                 username: getCurrentUser(),
                 score: score,
@@ -4192,6 +4280,7 @@
             };
             await sendTestResultToGAS(currentChapterOrRange, score, currentQuestions.length, testElapsedSeconds);
         } else {
+            testElapsedSeconds = 0;
             lastTestRecord = null;
         }
         showResult();
@@ -4242,7 +4331,6 @@
             timeTextEl.style.display = 'block';
 
             rankingBox.style.display = 'block';
-            // 今回の成績（lastTestRecord）を渡して、一致かつ5位以内ならハイライト
             fetchChapterRanking(currentChapterOrRange, 'result-ranking-list', lastTestRecord);
         } else {
             timeTextEl.style.display = 'none';
@@ -4253,7 +4341,7 @@
         if (currentMode === 'learn') {
             actionBtn.innerText = "出題・回答形式選択に戻る";
         } else {
-            actionBtn.innerText = "テスト範囲選択に戻る";
+            actionBtn.innerText = "チャプター選択に戻る";
         }
 
         const retryBtn = document.getElementById('retry-mistakes-btn');
@@ -4269,7 +4357,7 @@
 
         if (mistakeList.length > 0) {
             const title = document.createElement('div');
-            title.innerHTML = '<h3 style="margin: 10px 0 6px 0; font-size: 1rem; color: #dc2626;">❌ 間違えた単語と回答</h3>';
+            title.innerHTML = '<h3 style="margin: 2px 0 6px 0; font-size: 0.95rem; color: #dc2626;">❌ 間違えた単語と回答</h3>';
             inlineContainer.appendChild(title);
 
             mistakeList.forEach(item => {
@@ -4334,7 +4422,7 @@
             const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
 
             const pts = getWordCorrectPoints(hObj);
-            const wordRate = Math.round((pts / 11) * 100);
+            const wordRate = ((pts / 11) * 100).toFixed(1);
 
             const card = document.createElement('div');
             card.className = 'word-history-card';
@@ -4418,7 +4506,7 @@
             const enTypingArr = Array.isArray(hObj) ? [] : (hObj.en_typing || []);
 
             const pts = getWordCorrectPoints(hObj);
-            const wordRate = Math.round((pts / 11) * 100);
+            const wordRate = ((pts / 11) * 100).toFixed(1);
 
             const card = document.createElement('div');
             card.className = 'word-history-card';
@@ -4501,7 +4589,7 @@
         "＼ムネヲ ハッテ イキロ／", "＼ウマイ！ ウマイ！ ウマイ！／", "＼ワカイメハ ツマセナイ／",
         "＼ツメキリ ハ シナイ／", "＼オレハ シンジル キミタチヲ シンジル／", "＼ヨモヤ ヨモヤ ダ／",
         "＼シランケド／", "＼ソレガ キミノ ホンキ？／", "＼オレハ オレノセキムヲ マットウスル／",
-        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ 마エヲムケ／", "＼オマエノモノハ オレノモノ／",
+        "＼チョコット ヤスミタイ／", "＼ハヲ クイシバッテ マエヲムケ／", "＼オマエノモノハ オレノモノ／",
         "＼ダカラ イッタダロ／", "＼スイブン ホキュウチュウ／", "＼ヤバイヨ ヤバイヨ／",
         "＼ジャースティース！／", "＼ワイルド ダロ？／", "＼マジッスカ？／",
         "＼パワー！／", "＼ハ カ タ ノ シオッ！／", "＼ネテモ ツカレガ トレマセン／",
