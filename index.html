@@ -382,12 +382,12 @@
             background: #ffffff;
             border: 1px solid #fed7aa;
             border-radius: 8px;
-            padding: 8px 12px;
-            margin-bottom: 5px;
+            padding: 6px 10px;
+            margin-bottom: 4px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .ranking-item.highlight-user {
             background: #fef08a !important;
@@ -536,7 +536,7 @@
 
         <p style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem;">学習するモードを選んでください</p>
         <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
-            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード (50語ごと)</button>
+            <button class="btn primary-btn" style="padding: 14px; font-size: 1rem;" onclick="selectMode('learn')">📚 学習モード</button>
             <button class="btn ranking-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showRankingScreen()">🏆 達成率ランキング</button>
             <button class="btn history-btn" style="padding: 12px; font-size: 0.95rem;" onclick="showHistoryScreen()">📊 単語別アチーブメント・履歴</button>
             
@@ -555,28 +555,36 @@
         </div>
     </div>
 
-    <!-- ② チャプター選択画面 -->
+    <!-- ② チャプター選択画面（400語ごと / 50語ごと / 10語チャプター共用） -->
     <div id="chapter-screen" class="screen">
         <p id="chapter-instruction" style="text-align: center; color: #9a3412; margin-bottom: 10px; font-size: 0.9rem; flex-shrink: 0;"></p>
         <div class="scroll-container" id="chapter-list"></div>
         <button class="btn back-btn" id="chapter-back-btn" onclick="showModeSelect()">モード選択に戻る</button>
     </div>
 
-    <!-- ②-1b テスト前プレビュー（スタート＆上位5位ランキング表示）画面 -->
-    <div id="test-preview-screen" class="screen">
-        <h2 id="preview-title" style="color: #7c2d12; text-align: center; margin-bottom: 4px; font-size: 1.2rem;">テスト範囲</h2>
-        <p style="text-align: center; color: #9a3412; font-size: 0.85rem; margin-bottom: 10px;">ハイスコアを目指してタイムアタック！</p>
+    <!-- ②-1b テスト前プレビュー（スタート＆ランキング表示）画面 -->
+    <div id="test-preview-screen" class="screen" style="overflow-y: auto;">
+        <h2 id="preview-title" style="color: #7c2d12; text-align: center; margin: 0 0 4px 0; font-size: 1.2rem; flex-shrink: 0;">テスト範囲</h2>
+        <p style="text-align: center; color: #9a3412; font-size: 0.85rem; margin: 0 0 8px 0; flex-shrink: 0;">ハイスコアを目指してタイムアタック！</p>
         
-        <div style="background: #ffedd5; border: 2px solid #fed7aa; border-radius: 12px; padding: 12px; margin-bottom: 10px; flex-shrink: 0;">
-            <div style="font-size: 0.85rem; font-weight: bold; color: #c2410c; margin-bottom: 6px; text-align: center;">👑 チャプターランキング 上位5位</div>
+        <div style="background: #ffedd5; border: 2px solid #fed7aa; border-radius: 12px; padding: 10px; margin-bottom: 8px; flex-shrink: 0;">
+            <div style="font-size: 0.82rem; font-weight: bold; color: #c2410c; margin-bottom: 5px; text-align: center;">👑 全体ランキング 上位5位 (1ID 1記録)</div>
             <div id="preview-ranking-list">
-                <p style="text-align: center; font-size: 0.85rem; color: #64748b;">読み込み中...</p>
+                <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
             </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto;">
-            <button class="btn primary-btn" style="padding: 16px; font-size: 1.1rem; background-color: #059669;" onclick="startActualTest()">🚀 スタート！</button>
-            <button class="btn back-btn" onclick="backFromTestPreview()">もどる</button>
+        <div style="background: #fef3c7; border: 2px solid #fcd34d; border-radius: 12px; padding: 10px; margin-bottom: 10px; flex-shrink: 0;">
+            <div style="font-size: 0.82rem; font-weight: bold; color: #92400e; margin-bottom: 5px; text-align: center;">🏅 マイ ベストタイム 上位5位</div>
+            <div id="preview-personal-ranking-list">
+                <p style="text-align: center; font-size: 0.8rem; color: #64748b;">まだ記録がありません</p>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto; flex-shrink: 0;">
+            <button class="btn primary-btn" style="padding: 14px; font-size: 1.05rem; background-color: #059669; margin-bottom: 0;" onclick="startActualTest()">🚀 スタート！</button>
+            <button class="btn secondary-btn" id="preview-learn-chapter-btn" style="padding: 12px; font-size: 0.95rem; margin-top: 0; margin-bottom: 0;" onclick="goToChapterLearnFromPreview()">📚 チャプターを学習する</button>
+            <button class="btn back-btn" style="margin-top: 0; margin-bottom: 0;" onclick="backFromTestPreview()">もどる</button>
         </div>
     </div>
 
@@ -590,7 +598,7 @@
             <button class="btn primary-btn" style="padding: 14px; background-color: #7c3aed;" onclick="startLearnQuizWithType('en_typing')">⌨️ 英訳 タイピング (日 ➔ 英)</button>
             <button class="btn secondary-btn" style="padding: 12px; background-color: #0d9488;" onclick="showLearnVocabularyCheck()">📖 単語をチェックする<br><span style="font-size: 0.85rem;">(意味・成績を見る)</span></button>
         </div>
-        <button class="btn back-btn" onclick="backToSubChapters()">チャプター選択に戻る</button>
+        <button class="btn back-btn" onclick="backToSubChapters()">範囲選択に戻る</button>
     </div>
 
     <!-- ③ クイズ画面 -->
@@ -629,11 +637,20 @@
         <div class="result-box" id="score-text"></div>
         <div id="result-time-text" style="text-align: center; font-weight: bold; color: #c2410c; font-size: 1.3rem; margin-bottom: 6px; font-family: monospace; flex-shrink: 0;"></div>
         
-        <!-- タイムアタック（総合テスト）結果直下のランキング表示エリア -->
-        <div id="result-ranking-box" style="display: none; background: #ffedd5; border: 2px solid #fed7aa; border-radius: 10px; padding: 8px; margin-bottom: 6px; flex-shrink: 0;">
-            <div style="font-size: 0.78rem; font-weight: bold; color: #c2410c; margin-bottom: 4px; text-align: center;">👑 今回のチャプターランキング (上位5位)</div>
-            <div id="result-ranking-list">
-                <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
+        <!-- タイムアタック（総合テスト）結果直下のランキング表示エリア（全体＋個人） -->
+        <div id="result-ranking-box" style="display: none; flex-direction: column; gap: 6px; margin-bottom: 6px; flex-shrink: 0;">
+            <div style="background: #ffedd5; border: 2px solid #fed7aa; border-radius: 10px; padding: 8px;">
+                <div style="font-size: 0.78rem; font-weight: bold; color: #c2410c; margin-bottom: 4px; text-align: center;">👑 全体ランキング (上位5位)</div>
+                <div id="result-ranking-list">
+                    <p style="text-align: center; font-size: 0.8rem; color: #64748b;">読み込み中...</p>
+                </div>
+            </div>
+
+            <div style="background: #fef3c7; border: 2px solid #fcd34d; border-radius: 10px; padding: 8px;">
+                <div style="font-size: 0.78rem; font-weight: bold; color: #92400e; margin-bottom: 4px; text-align: center;">🏅 マイ ベストタイム (上位5位)</div>
+                <div id="result-personal-ranking-list">
+                    <p style="text-align: center; font-size: 0.8rem; color: #64748b;">まだ記録がありません</p>
+                </div>
             </div>
         </div>
 
@@ -644,12 +661,12 @@
             <button class="btn secondary-btn" onclick="showDetailScreen()" style="padding: 10px; margin: 0; font-size: 0.9rem;">📖 今回の単語を見る</button>
         </div>
 
-        <!-- 間違えた単語リスト（最大360px＝約4倍の高さまで広がり、それを超えたらスクロール） -->
+        <!-- 間違えた単語リスト -->
         <div class="mistake-scroll-box" id="mistake-inline-container" style="border-top: 1px dashed #fed7aa; padding-top: 4px; margin-bottom: 6px;"></div>
 
         <!-- 下部戻りボタン -->
         <div style="display: flex; flex-direction: column; gap: 5px; flex-shrink: 0;">
-            <button class="btn" style="padding: 10px; margin: 0; font-size: 0.9rem;" onclick="handleResultBackToChapter()" id="result-back-action-btn">出題・回答形式選択に戻る</button>
+            <button class="btn" style="padding: 10px; margin: 0; font-size: 0.9rem;" onclick="handleResultBackToChapter()" id="result-back-action-btn">範囲選択に戻る</button>
             <button class="btn back-btn" style="padding: 10px; margin: 0; font-size: 0.9rem;" onclick="showModeSelect()">最初に戻る</button>
         </div>
     </div>
@@ -902,12 +919,90 @@
         }
     }
 
+    // 自分だけのタイムアタック記録（50語範囲ごとに上位5位まで）の保存・取得
+    function recordPersonalTimeAttack(rangeKey, scoreVal, totalVal, timeSecondsVal) {
+        const map = getWordHistoryMap();
+        if (!map._timeAttackRecords) {
+            map._timeAttackRecords = {};
+        }
+        if (!Array.isArray(map._timeAttackRecords[rangeKey])) {
+            map._timeAttackRecords[rangeKey] = [];
+        }
+
+        const newRecord = {
+            score: scoreVal,
+            total: totalVal,
+            timeSeconds: Number(timeSecondsVal.toFixed(2)),
+            recordedAt: Date.now()
+        };
+
+        const list = map._timeAttackRecords[rangeKey];
+        list.push(newRecord);
+        // 正解数が多い順、同点ならタイムが速い順にソートして上位5件を保持
+        list.sort((a, b) => (b.score - a.score) || (a.timeSeconds - b.timeSeconds));
+        map._timeAttackRecords[rangeKey] = list.slice(0, 5);
+
+        saveWordHistoryMap(map);
+        return {
+            bestRecord: map._timeAttackRecords[rangeKey][0],
+            top5: map._timeAttackRecords[rangeKey],
+            currentRecord: newRecord
+        };
+    }
+
+    function getPersonalTimeAttackTop5(rangeKey) {
+        const map = getWordHistoryMap();
+        if (!map._timeAttackRecords || !Array.isArray(map._timeAttackRecords[rangeKey])) {
+            return [];
+        }
+        return map._timeAttackRecords[rangeKey].slice(0, 5);
+    }
+
+    function renderPersonalTimeAttackRanking(rangeKey, containerId, targetHighlight = null) {
+        const listContainer = document.getElementById(containerId);
+        if (!listContainer) return;
+
+        const records = getPersonalTimeAttackTop5(rangeKey);
+        listContainer.innerHTML = '';
+
+        if (records.length === 0) {
+            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.8rem; color: #64748b; margin: 4px 0;">まだ自分の記録がありません</p>';
+            return;
+        }
+
+        records.forEach((r, idx) => {
+            const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "";
+            const rankNumStr = `${idx + 1}.`;
+            const timeStr = formatStopwatchTime(r.timeSeconds);
+
+            const div = document.createElement('div');
+            div.className = 'ranking-item';
+
+            if (targetHighlight && targetHighlight.score === r.score && Math.abs(targetHighlight.timeSeconds - r.timeSeconds) < 0.05) {
+                div.classList.add('highlight-user');
+            }
+
+            const dateStr = r.recordedAt ? new Date(r.recordedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '';
+
+            div.innerHTML = `
+                <div class="rank-left-group" style="font-weight: bold; color: #1e293b;">
+                    <span class="rank-medal-col">${medal}</span>
+                    <span class="rank-num-col">${rankNumStr}</span>
+                    <span>${getCurrentUser()}</span>
+                    ${dateStr ? `<span style="font-size: 0.72rem; color: #78716c; font-weight: normal; margin-left: 4px;">(${dateStr})</span>` : ''}
+                </div>
+                <div style="color: #92400e; font-weight: bold;">${r.score}/${r.total}問 <span style="color: #475569; font-weight: normal; font-size: 0.8rem; font-family: monospace;">(${timeStr})</span></div>
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+
     async function fetchChapterRanking(rangeKey, containerId, targetHighlight = null) {
         const listContainer = document.getElementById(containerId);
-        listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #64748b;">ランキング読込中...</p>';
+        listContainer.innerHTML = '<p style="text-align: center; font-size: 0.8rem; color: #64748b;">ランキング読込中...</p>';
 
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) {
-            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #dc2626;">※GAS未設定</p>';
+            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.8rem; color: #dc2626;">※GAS未設定</p>';
             return;
         }
 
@@ -915,11 +1010,42 @@
             const res = await fetch(`${GAS_WEB_APP_URL}?action=getRanking&range=${encodeURIComponent(rangeKey)}`);
             if (res.ok) {
                 const data = await res.json();
-                const rankings = data.rankings || [];
+                const rawRankings = data.rankings || [];
+
+                // フロント側でも「1IDにつきベスト1記録のみ」に集約して表示を保証
+                const bestByUser = {};
+                rawRankings.forEach(r => {
+                    const existing = bestByUser[r.username];
+                    if (!existing || r.score > existing.score || (r.score === existing.score && r.timeSeconds < existing.timeSeconds)) {
+                        bestByUser[r.username] = r;
+                    }
+                });
+
+                // 現在のログインユーザーのローカル自己ベストがより良い場合は反映
+                const currentUser = getCurrentUser();
+                if (currentUser !== DEFAULT_GUEST_ID) {
+                    const localTop5 = getPersonalTimeAttackTop5(rangeKey);
+                    if (localTop5.length > 0) {
+                        const localBest = localTop5[0];
+                        const cloudBest = bestByUser[currentUser];
+                        if (!cloudBest || localBest.score > cloudBest.score || (localBest.score === cloudBest.score && localBest.timeSeconds < cloudBest.timeSeconds)) {
+                            bestByUser[currentUser] = {
+                                username: currentUser,
+                                score: localBest.score,
+                                total: localBest.total,
+                                timeSeconds: localBest.timeSeconds
+                            };
+                        }
+                    }
+                }
+
+                const rankings = Object.values(bestByUser)
+                    .sort((a, b) => (b.score - a.score) || (a.timeSeconds - b.timeSeconds))
+                    .slice(0, 5);
                 
                 listContainer.innerHTML = '';
                 if (rankings.length === 0) {
-                    listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #64748b;">まだ記録がありません。一番乗りを目指そう！</p>';
+                    listContainer.innerHTML = '<p style="text-align: center; font-size: 0.8rem; color: #64748b;">まだ記録がありません。一番乗りを目指そう！</p>';
                     return;
                 }
 
@@ -930,14 +1056,8 @@
 
                     const div = document.createElement('div');
                     div.className = 'ranking-item';
-                    
-                    const currentUser = getCurrentUser();
-                    let isThisRunMatch = false;
-                    if (targetHighlight && targetHighlight.username === r.username && targetHighlight.score === r.score && Math.abs(targetHighlight.timeSeconds - r.timeSeconds) < 0.05) {
-                        isThisRunMatch = true;
-                    }
 
-                    if (isThisRunMatch && currentUser !== DEFAULT_GUEST_ID) {
+                    if (r.username === currentUser && currentUser !== DEFAULT_GUEST_ID) {
                         div.classList.add('highlight-user');
                     }
 
@@ -953,7 +1073,7 @@
                 });
             }
         } catch (e) {
-            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.85rem; color: #dc2626;">ランキングの取得に失敗しました</p>';
+            listContainer.innerHTML = '<p style="text-align: center; font-size: 0.8rem; color: #dc2626;">ランキングの取得に失敗しました</p>';
         }
     }
 
@@ -965,6 +1085,7 @@
         try {
             const payload = {
                 action: "saveTestResult",
+                uniquePerUser: true,
                 username: user,
                 testRange: testRange,
                 score: score,
@@ -1033,7 +1154,7 @@
 
     function hasWordData(mapObj) {
         if (!mapObj || typeof mapObj !== 'object') return false;
-        const keys = Object.keys(mapObj).filter(k => k !== '_updatedAt');
+        const keys = Object.keys(mapObj).filter(k => k !== '_updatedAt' && k !== '_timeAttackRecords');
         return keys.length > 0;
     }
 
@@ -3622,6 +3743,7 @@
     let currentMode = "";
     let currentTargetName = "";
     let currentChapterOrRange = "";
+    let selectedBlock400 = "";
     let selectedBlock50 = "";
     let currentQuestions = [];
     let currentIndex = 0;
@@ -3888,6 +4010,45 @@
         switchScreen('mode-screen');
     }
 
+    // 範囲文字列 ("1-50" など) の開始番号を取得
+    function getRangeStartNumber(rangeStr) {
+        const parts = String(rangeStr).split('-');
+        return parseInt(parts[0], 10) || 1;
+    }
+
+    // 400語ごとの大ブロック一覧を構築するヘルパー
+    function getBlocks400() {
+        const block50List = [...new Set(wordsData.map(w => w.test))];
+        const groups = {};
+
+        block50List.forEach(r50 => {
+            const startNum = getRangeStartNumber(r50);
+            const blockIdx = Math.floor((startNum - 1) / 400);
+            if (!groups[blockIdx]) {
+                groups[blockIdx] = [];
+            }
+            groups[blockIdx].push(r50);
+        });
+
+        return Object.keys(groups)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(idxStr => {
+                const idx = Number(idxStr);
+                const r50s = groups[idx];
+                const wordsInGroup = wordsData.filter(w => r50s.includes(w.test));
+                const minNum = Math.min(...wordsInGroup.map(w => w.number));
+                const maxNum = Math.max(...wordsInGroup.map(w => w.number));
+                const label = `${minNum}-${maxNum}`;
+                return {
+                    blockIdx: idx,
+                    label: label,
+                    ranges50: r50s,
+                    words: wordsInGroup
+                };
+            });
+    }
+
+    // ① 学習モード入口：400語ごとの範囲選択画面（ここだけ「モード選択に戻る」）
     function selectMode(mode) {
         getAudioContext();
         currentMode = mode;
@@ -3896,12 +4057,51 @@
         listContainer.innerHTML = '';
         const instruction = document.getElementById('chapter-instruction');
         const backBtn = document.getElementById('chapter-back-btn');
+        backBtn.innerText = "モード選択に戻る";
         backBtn.onclick = showModeSelect;
 
         instruction.innerText = "学習する範囲を選んでください";
-        const blockRanges = [...new Set(wordsData.map(w => w.test))];
+        const blocks400 = getBlocks400();
         
-        blockRanges.forEach(range => {
+        blocks400.forEach(blk => {
+            const achieve = calcChapterAchievement(blk.words);
+
+            const btn = document.createElement('button');
+            btn.className = 'btn chapter-btn';
+            const badgeClass = achieve.learnedRatio === "未学習" ? "badge" : "badge completed";
+            btn.innerHTML = `<span>No. ${blk.label}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
+            
+            btn.onclick = () => {
+                selectedBlock400 = blk.label;
+                show50RangesInBlock400(blk.label);
+            };
+            listContainer.appendChild(btn);
+        });
+
+        switchScreen('chapter-screen');
+    }
+
+    // ② 400語ブロック内の50語ごとの範囲選択画面（「範囲選択に戻る」で400語一覧へ）
+    function show50RangesInBlock400(block400Label) {
+        currentMode = 'learn';
+        isFromLobby = false;
+        selectedBlock400 = block400Label;
+
+        const blocks400 = getBlocks400();
+        const targetBlock = blocks400.find(b => b.label === block400Label) || blocks400[0];
+
+        const instruction = document.getElementById('chapter-instruction');
+        instruction.innerText = `範囲 ${targetBlock ? targetBlock.label : block400Label} のチャプターを選んでください`;
+        const listContainer = document.getElementById('chapter-list');
+        listContainer.innerHTML = '';
+
+        const backBtn = document.getElementById('chapter-back-btn');
+        backBtn.innerText = "範囲選択に戻る";
+        backBtn.onclick = () => selectMode('learn');
+
+        const ranges50 = targetBlock ? targetBlock.ranges50 : [...new Set(wordsData.map(w => w.test))];
+
+        ranges50.forEach(range => {
             const wordsInRange = wordsData.filter(w => w.test === range);
             const achieve = calcChapterAchievement(wordsInRange);
 
@@ -3920,11 +4120,19 @@
         switchScreen('chapter-screen');
     }
 
+    // 50語範囲（例："1-50"）から対応する400語ブロックラベルを特定
+    function findBlock400LabelForRange50(range50) {
+        const blocks400 = getBlocks400();
+        const found = blocks400.find(b => b.ranges50.includes(range50));
+        return found ? found.label : (blocks400[0] ? blocks400[0].label : "");
+    }
+
     function openTimeAttackLobby() {
         getAudioContext();
         currentMode = 'test';
         isFromLobby = true;
         selectedBlock50 = featuredTimeAttackRange;
+        selectedBlock400 = findBlock400LabelForRange50(featuredTimeAttackRange);
         currentChapterOrRange = featuredTimeAttackRange;
         currentTargetName = `タイムアタック: 範囲${featuredTimeAttackRange}`;
         openTestPreview(featuredTimeAttackRange, `⚡ タイムアタック (範囲 ${featuredTimeAttackRange})`);
@@ -3933,7 +4141,18 @@
     function openTestPreview(rangeKey, titleText) {
         document.getElementById('preview-title').innerText = titleText;
         fetchChapterRanking(rangeKey, 'preview-ranking-list', null);
+        renderPersonalTimeAttackRanking(rangeKey, 'preview-personal-ranking-list', null);
         switchScreen('test-preview-screen');
+    }
+
+    // タイムアタックプレビュー画面の「チャプターを学習する」ボタン押下時
+    function goToChapterLearnFromPreview() {
+        getAudioContext();
+        const targetRange50 = currentChapterOrRange || selectedBlock50 || featuredTimeAttackRange;
+        selectedBlock50 = targetRange50;
+        selectedBlock400 = findBlock400LabelForRange50(targetRange50);
+        isFromLobby = false;
+        showSubChapters(targetRange50);
     }
 
     function backFromTestPreview() {
@@ -3949,17 +4168,23 @@
         startTestQuiz(currentChapterOrRange);
     }
 
+    // ③ 50語範囲内の10語ごとのチャプター選択画面（「範囲選択に戻る」で50語一覧へ）
     function showSubChapters(range) {
         currentMode = 'learn';
         isFromLobby = false;
         selectedBlock50 = range;
+        if (!selectedBlock400) {
+            selectedBlock400 = findBlock400LabelForRange50(range);
+        }
+
         const instruction = document.getElementById('chapter-instruction');
         instruction.innerText = `範囲 ${range} 内のチャプターを選んでください`;
         const listContainer = document.getElementById('chapter-list');
         listContainer.innerHTML = '';
 
         const backBtn = document.getElementById('chapter-back-btn');
-        backBtn.onclick = () => selectMode('learn');
+        backBtn.innerText = "範囲選択に戻る";
+        backBtn.onclick = () => show50RangesInBlock400(selectedBlock400);
 
         const filteredWords = wordsData.filter(w => w.test === range);
         const chapters = [...new Set(filteredWords.map(w => w.chapter))];
@@ -4273,12 +4498,28 @@
         stopLiveTimer();
         if (currentMode === 'test' && currentQuestions.length === 20 && testStartTime > 0) {
             testElapsedSeconds = (Date.now() - testStartTime) / 1000;
+
+            // 1. 自分の50語ごと記録（上位5位）に保存し、自己ベストを取得
+            const personalResult = recordPersonalTimeAttack(
+                currentChapterOrRange,
+                score,
+                currentQuestions.length,
+                testElapsedSeconds
+            );
+
             lastTestRecord = {
                 username: getCurrentUser(),
-                score: score,
-                timeSeconds: testElapsedSeconds
+                score: personalResult.currentRecord.score,
+                timeSeconds: personalResult.currentRecord.timeSeconds
             };
-            await sendTestResultToGAS(currentChapterOrRange, score, currentQuestions.length, testElapsedSeconds);
+
+            // 2. 全体ランキングへは「一番いい記録（自己ベスト）」を送信して更新（1ID 1記録）
+            await sendTestResultToGAS(
+                currentChapterOrRange,
+                personalResult.bestRecord.score,
+                personalResult.bestRecord.total,
+                personalResult.bestRecord.timeSeconds
+            );
         } else {
             testElapsedSeconds = 0;
             lastTestRecord = null;
@@ -4330,8 +4571,9 @@
             timeTextEl.innerText = `⏱️ クリアタイム: ${formatStopwatchTime(testElapsedSeconds)}`;
             timeTextEl.style.display = 'block';
 
-            rankingBox.style.display = 'block';
+            rankingBox.style.display = 'flex';
             fetchChapterRanking(currentChapterOrRange, 'result-ranking-list', lastTestRecord);
+            renderPersonalTimeAttackRanking(currentChapterOrRange, 'result-personal-ranking-list', lastTestRecord);
         } else {
             timeTextEl.style.display = 'none';
             rankingBox.style.display = 'none';
@@ -4341,7 +4583,7 @@
         if (currentMode === 'learn') {
             actionBtn.innerText = "出題・回答形式選択に戻る";
         } else {
-            actionBtn.innerText = "チャプター選択に戻る";
+            actionBtn.innerText = "範囲選択に戻る";
         }
 
         const retryBtn = document.getElementById('retry-mistakes-btn');
