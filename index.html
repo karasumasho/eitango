@@ -547,7 +547,7 @@
 
             <div class="mikan-container">
                 <div class="mikan-speech-text" id="home-mikan-speech">＼読込中...／</div>
-                <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1Y3QTM7na1-geO6AdIRYLG-jqIWQkcRWo" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
+                <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
                 <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
 
@@ -631,7 +631,7 @@
         
         <div class="mikan-container" style="margin-top: 4px; margin-bottom: 6px;">
             <div class="mikan-speech-text result-mikan-speech" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
-            <img class="result-mikan-img" src="https://lh3.googleusercontent.com/d/1Y3QTM7na1-geO6AdIRYLG-jqIWQkcRWo" alt="みかん星人">
+            <img class="result-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人">
         </div>
 
         <div class="result-box" id="score-text"></div>
@@ -896,6 +896,7 @@
         return {};
     }
 
+    // Settingsシートから B2:セリフ / B3:注目範囲 / B4:トップ画像URL / B5:結果画面画像URL を取得
     async function fetchAppSettings() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
         try {
@@ -912,6 +913,15 @@
                     if (btnEl) {
                         btnEl.innerHTML = `⚡ 注目チャプター タイムアタック！<br><span style="font-size: 0.9rem;">(範囲 ${featuredTimeAttackRange})</span>`;
                     }
+                }
+                if (data && data.homeMikanImageUrl) {
+                    const homeImg = document.getElementById('home-mikan-img');
+                    if (homeImg) homeImg.src = data.homeMikanImageUrl;
+                }
+                if (data && data.resultMikanImageUrl) {
+                    document.querySelectorAll('.result-mikan-img').forEach(img => {
+                        img.src = data.resultMikanImageUrl;
+                    });
                 }
             }
         } catch (err) {
@@ -938,7 +948,6 @@
 
         const list = map._timeAttackRecords[rangeKey];
         list.push(newRecord);
-        // 正解数が多い順、同点ならタイムが速い順にソートして上位5件を保持
         list.sort((a, b) => (b.score - a.score) || (a.timeSeconds - b.timeSeconds));
         map._timeAttackRecords[rangeKey] = list.slice(0, 5);
 
@@ -1012,7 +1021,6 @@
                 const data = await res.json();
                 const rawRankings = data.rankings || [];
 
-                // フロント側でも「1IDにつきベスト1記録のみ」に集約して表示を保証
                 const bestByUser = {};
                 rawRankings.forEach(r => {
                     const existing = bestByUser[r.username];
@@ -1021,7 +1029,6 @@
                     }
                 });
 
-                // 現在のログインユーザーのローカル自己ベストがより良い場合は反映
                 const currentUser = getCurrentUser();
                 if (currentUser !== DEFAULT_GUEST_ID) {
                     const localTop5 = getPersonalTimeAttackTop5(rangeKey);
@@ -1435,6 +1442,7 @@
         syncToGAS();
     }
 
+    // ★ここにお手持ちの全単語データを貼り付けてください
     const wordsData = [
 
     { test: "1-50", chapter: "1-10", number: 1, english: "agree", japanese: "賛成する", detail: "[自] ①賛成する ②（主語の中で）意見が一致する ③（with ～）（気候，食べ物が）（～に）合う" },
@@ -4010,7 +4018,6 @@
         switchScreen('mode-screen');
     }
 
-    // 範囲文字列 ("1-50" など) の開始番号を取得
     function getRangeStartNumber(rangeStr) {
         const parts = String(rangeStr).split('-');
         return parseInt(parts[0], 10) || 1;
@@ -4120,7 +4127,6 @@
         switchScreen('chapter-screen');
     }
 
-    // 50語範囲（例："1-50"）から対応する400語ブロックラベルを特定
     function findBlock400LabelForRange50(range50) {
         const blocks400 = getBlocks400();
         const found = blocks400.find(b => b.ranges50.includes(range50));
@@ -4145,7 +4151,6 @@
         switchScreen('test-preview-screen');
     }
 
-    // タイムアタックプレビュー画面の「チャプターを学習する」ボタン押下時
     function goToChapterLearnFromPreview() {
         getAudioContext();
         const targetRange50 = currentChapterOrRange || selectedBlock50 || featuredTimeAttackRange;
@@ -4499,7 +4504,6 @@
         if (currentMode === 'test' && currentQuestions.length === 20 && testStartTime > 0) {
             testElapsedSeconds = (Date.now() - testStartTime) / 1000;
 
-            // 1. 自分の50語ごと記録（上位5位）に保存し、自己ベストを取得
             const personalResult = recordPersonalTimeAttack(
                 currentChapterOrRange,
                 score,
@@ -4513,7 +4517,6 @@
                 timeSeconds: personalResult.currentRecord.timeSeconds
             };
 
-            // 2. 全体ランキングへは「一番いい記録（自己ベスト）」を送信して更新（1ID 1記録）
             await sendTestResultToGAS(
                 currentChapterOrRange,
                 personalResult.bestRecord.score,
