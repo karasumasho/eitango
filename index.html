@@ -449,8 +449,9 @@
             margin-bottom: 4px;
         }
         .result-mikan-img {
+            display: none;
             width: 91px;
-            height: 91px;
+            height: auto;
             object-fit: contain;
         }
 
@@ -547,7 +548,7 @@
 
             <div class="mikan-container">
                 <div class="mikan-speech-text" id="home-mikan-speech">＼読込中...／</div>
-                <img id="home-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人" style="width: 65px; height: 65px; object-fit: contain; transition: width 0.3s, height 0.3s;">
+                <img id="home-mikan-img" src="" alt="みかん星人" style="display: none; width: 65px; height: auto; object-fit: contain; transition: width 0.3s;">
                 <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
 
@@ -631,7 +632,7 @@
         
         <div class="mikan-container" style="margin-top: 4px; margin-bottom: 6px;">
             <div class="mikan-speech-text result-mikan-speech" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
-            <img class="result-mikan-img" src="https://lh3.googleusercontent.com/d/1zwuUMUkoq_ivyIo71JJI-ChmRJw1LimJ" alt="みかん星人">
+            <img class="result-mikan-img" src="" alt="みかん星人">
         </div>
 
         <div class="result-box" id="score-text"></div>
@@ -686,10 +687,10 @@
         <button class="btn primary-btn" onclick="hideVocabCheckScreen()">戻る</button>
     </div>
 
-    <!-- ⑥ 成績履歴画面 (独立オーバーレイ) -->
+    <!-- ⑥ 成績履歴画面 (独立オーバーレイ：600語ごと ➔ 100語ごと) -->
     <div id="history-screen" class="overlay-screen">
         <h2 style="color: #7c2d12;">単語別アチーブメント・履歴</h2>
-        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 範囲をタップすると単語一覧がひらきます</p>
+        <p style="font-size: 0.8rem; color: #7c2d12; text-align: center; margin-top: -5px; margin-bottom: 8px;">💡 範囲をタップすると100語ごとの一覧がひらきます</p>
         
         <div class="scroll-container" id="history-list" style="margin-bottom: 6px;"></div>
         
@@ -896,6 +897,12 @@
         return {};
     }
 
+    function withCacheBust(url) {
+        if (!url) return "";
+        const sep = url.includes('?') ? '&' : '?';
+        return `${url}${sep}_t=${Date.now()}`;
+    }
+
     // Settingsシートから B2:セリフ / B3:注目範囲 / B4:トップ画像URL / B5:結果画面画像URL を取得
     async function fetchAppSettings() {
         if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("YOUR_GAS")) return;
@@ -916,11 +923,16 @@
                 }
                 if (data && data.homeMikanImageUrl) {
                     const homeImg = document.getElementById('home-mikan-img');
-                    if (homeImg) homeImg.src = data.homeMikanImageUrl;
+                    if (homeImg) {
+                        homeImg.src = withCacheBust(data.homeMikanImageUrl);
+                        homeImg.style.display = 'block';
+                    }
                 }
                 if (data && data.resultMikanImageUrl) {
+                    const bustResultUrl = withCacheBust(data.resultMikanImageUrl);
                     document.querySelectorAll('.result-mikan-img').forEach(img => {
-                        img.src = data.resultMikanImageUrl;
+                        img.src = bustResultUrl;
+                        img.style.display = 'block';
                     });
                 }
             }
@@ -3840,15 +3852,15 @@
         const overallRate = Math.min(100, (totalPoints / maxPossiblePoints) * 100);
         document.getElementById('total-achievement-text').innerText = `${overallRate.toFixed(1)}%`;
 
-        const minSize = 65;
-        const maxSize = 195;
+        const minWidth = 65;
+        const maxWidth = 195;
         const stepRate = Math.floor(overallRate / 5) * 5;
-        const dynamicSize = Math.round(minSize + (maxSize - minSize) * (stepRate / 100));
+        const dynamicWidth = Math.round(minWidth + (maxWidth - minWidth) * (stepRate / 100));
         
         const mikanImg = document.getElementById('home-mikan-img');
         if (mikanImg) {
-            mikanImg.style.width = `${dynamicSize}px`;
-            mikanImg.style.height = `${dynamicSize}px`;
+            mikanImg.style.width = `${dynamicWidth}px`;
+            mikanImg.style.height = 'auto';
         }
     }
 
@@ -4702,37 +4714,94 @@
         document.getElementById('vocab-check-screen').style.display = 'none';
     }
 
+    // ① 履歴トップ：600語ごとの大ブロック一覧
     function showHistoryScreen() {
         getAudioContext();
         const listContainer = document.getElementById('history-list');
         listContainer.innerHTML = '';
         document.getElementById('data-management-panel').style.display = 'none';
 
-        const map = getWordHistoryMap();
-        const groups = {};
+        const headerTitle = document.querySelector('#history-screen h2');
+        if (headerTitle) headerTitle.innerText = "単語別アチーブメント・履歴";
+
+        const backBtn = document.querySelector('#history-screen > button.primary-btn');
+        if (backBtn) {
+            backBtn.innerText = "戻る";
+            backBtn.onclick = hideHistoryScreen;
+        }
+
+        const groups600 = {};
         wordsData.forEach(w => {
-            const groupNum = Math.floor((w.number - 1) / 100);
-            const groupKey = `${groupNum * 100 + 1} - ${(groupNum + 1) * 100}`;
-            if (!groups[groupKey]) groups[groupKey] = [];
-            groups[groupKey].push(w);
+            const blockIdx = Math.floor((w.number - 1) / 600);
+            if (!groups600[blockIdx]) groups600[blockIdx] = [];
+            groups600[blockIdx].push(w);
         });
 
-        Object.keys(groups).forEach(groupKey => {
-            const groupWords = groups[groupKey];
-            const achieve = calcChapterAchievement(groupWords);
+        Object.keys(groups600)
+            .sort((a, b) => Number(a) - Number(b))
+            .forEach(idxStr => {
+                const blockWords = groups600[idxStr];
+                const minNum = Math.min(...blockWords.map(w => w.number));
+                const maxNum = Math.max(...blockWords.map(w => w.number));
+                const blockLabel = `${minNum} - ${maxNum}`;
+                const achieve = calcChapterAchievement(blockWords);
 
-            const btn = document.createElement('button');
-            btn.className = 'btn chapter-btn';
-            const badgeClass = achieve.learnedRatio !== '未学習' ? 'badge completed' : 'badge';
-            btn.innerHTML = `<span>No. ${groupKey}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
-            
-            btn.onclick = () => {
-                showHistoryGroupScreen(groupKey, groupWords, map);
-            };
-            listContainer.appendChild(btn);
-        });
+                const btn = document.createElement('button');
+                btn.className = 'btn chapter-btn';
+                const badgeClass = achieve.learnedRatio !== '未学習' ? 'badge completed' : 'badge';
+                btn.innerHTML = `<span>No. ${blockLabel}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
+                
+                btn.onclick = () => {
+                    showHistory100Groups(blockLabel, blockWords);
+                };
+                listContainer.appendChild(btn);
+            });
 
         document.getElementById('history-screen').style.display = 'flex';
+    }
+
+    // ② 600語ブロック内の100語ごとの一覧
+    function showHistory100Groups(blockLabel, blockWords) {
+        const listContainer = document.getElementById('history-list');
+        listContainer.innerHTML = '';
+        document.getElementById('data-management-panel').style.display = 'none';
+
+        const headerTitle = document.querySelector('#history-screen h2');
+        if (headerTitle) headerTitle.innerText = `No. ${blockLabel} 履歴一覧`;
+
+        const backBtn = document.querySelector('#history-screen > button.primary-btn');
+        if (backBtn) {
+            backBtn.innerText = "範囲選択に戻る";
+            backBtn.onclick = showHistoryScreen;
+        }
+
+        const map = getWordHistoryMap();
+        const groups100 = {};
+        blockWords.forEach(w => {
+            const groupNum = Math.floor((w.number - 1) / 100);
+            if (!groups100[groupNum]) groups100[groupNum] = [];
+            groups100[groupNum].push(w);
+        });
+
+        Object.keys(groups100)
+            .sort((a, b) => Number(a) - Number(b))
+            .forEach(gIdx => {
+                const groupWords = groups100[gIdx];
+                const minNum = Math.min(...groupWords.map(w => w.number));
+                const maxNum = Math.max(...groupWords.map(w => w.number));
+                const groupKey = `${minNum} - ${maxNum}`;
+                const achieve = calcChapterAchievement(groupWords);
+
+                const btn = document.createElement('button');
+                btn.className = 'btn chapter-btn';
+                const badgeClass = achieve.learnedRatio !== '未学習' ? 'badge completed' : 'badge';
+                btn.innerHTML = `<span>No. ${groupKey}</span><span class="${badgeClass}">達成率: ${achieve.learnedRatio}</span>`;
+                
+                btn.onclick = () => {
+                    showHistoryGroupScreen(groupKey, groupWords, map);
+                };
+                listContainer.appendChild(btn);
+            });
     }
 
     function hideHistoryScreen() {
