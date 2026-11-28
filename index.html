@@ -276,14 +276,17 @@
 
         .typing-container {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
             width: 100%;
+            flex-shrink: 0;
         }
         .typing-input {
-            width: 100%;
-            padding: 14px;
-            font-size: 1.2rem;
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            font-size: 1.1rem;
             border-radius: 8px;
             border: 2px solid #fed7aa;
             box-sizing: border-box;
@@ -292,6 +295,15 @@
         }
         .typing-input:focus {
             border-color: #f97316;
+        }
+        .typing-submit-btn {
+            width: auto;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 0;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .result-box {
@@ -549,7 +561,6 @@
             <div class="mikan-container">
                 <div class="mikan-speech-text" id="home-mikan-speech">＼読込中...／</div>
                 <img id="home-mikan-img" src="" alt="みかん星人" style="display: none; width: 65px; height: auto; object-fit: contain; transition: width 0.3s;">
-                <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
             </div>
 
             <button class="btn timeattack-main-btn" style="padding: 12px; margin-top: 6px;" onclick="openTimeAttackLobby()" id="timeattack-lobby-btn">⚡ 注目チャプター タイムアタック！<br><span style="font-size: 0.9rem;">(範囲 1-50)</span></button>
@@ -620,7 +631,7 @@
 
         <div class="typing-container" id="typing-container" style="display: none;">
             <input type="text" id="typing-input" class="typing-input" placeholder="英単語を入力..." autocomplete="off" capitalize="off" spellcheck="false">
-            <button class="btn primary-btn" onclick="submitTypingAnswer()">回答する</button>
+            <button class="btn primary-btn typing-submit-btn" onclick="submitTypingAnswer()">回答</button>
         </div>
 
         <button class="btn danger-btn" style="margin-top: auto;" onclick="confirmQuitQuiz()">🚪 途中でやめる（中断）</button>
@@ -633,6 +644,7 @@
         <div class="mikan-container" style="margin-top: 4px; margin-bottom: 6px;">
             <div class="mikan-speech-text result-mikan-speech" id="result-mikan-speech">＼ヨッ！センパイ！／</div>
             <img class="result-mikan-img" src="" alt="みかん星人">
+            <div style="font-size: 0.75rem; color: #9a3412; margin-top: 2px; text-align: center;">（※地球侵略に向け日本語を学習中…。）</div>
         </div>
 
         <div class="result-box" id="score-text"></div>
@@ -2855,8 +2867,8 @@
     { test: "1351-1400", chapter: "1391-1400", number: 1396, english: "nevertheless", japanese: "それにもかかわらず", detail: "[副] それにもかかわらず" },
     { test: "1351-1400", chapter: "1391-1400", number: 1397, english: "somehow", japanese: "何らかの方法で", detail: "[副] ①何らかの方法で ②何らかの理由で，どういうわけか" },
     { test: "1351-1400", chapter: "1391-1400", number: 1398, english: "thus", japanese: "それゆえに", detail: "[副] ①それゆえ（に)②このように" },
-    { test: "1351-1400", chapter: "1391-1400", number: 1399, english: "afterward(s)", japanese: "その後", detail: "[副] ①（文頭で）その後 ②（～afterward）～の後" },
-    { test: "1351-1400", chapter: "1391-1400", number: 1400, english: "on behalf of ~", japanese: "代表して", detail: "[熟] ①～を代表して ②～のため" },
+    { test: "1351-1400", chapter: "1391-1400", number: 1399, english: "afterward", japanese: "その後", detail: "[副] ①（文頭で）その後 ②（～afterward）～の後" },
+    { test: "1351-1400", chapter: "1391-1400", number: 1400, english: "on behalf of", japanese: "代表して", detail: "[熟] ①～を代表して ②～のため" },
     { test: "1401-1450", chapter: "1401-1410", number: 1401, english: "assert", japanese: "断定する", detail: "[他] ～と断定する，～を主張する" },
     { test: "1401-1450", chapter: "1401-1410", number: 1402, english: "defy", japanese: "逆らう", detail: "[他] ①～に逆らう ②～を拒む" },
     { test: "1401-1450", chapter: "1401-1410", number: 1403, english: "condemn", japanese: "非難する", detail: "[他] ①～を非難する ②～に (刑の)宣告をする ③～を強いる" },
